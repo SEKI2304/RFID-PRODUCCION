@@ -1,0 +1,53 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; // Evitar scroll en nivel de root
+}
+
+.impresion-container-destiny {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; // Alineación al inicio para cuando hay scroll
+  min-height: 100vh;
+  background-color: #f0f4f7;
+  position: relative;
+  overflow-y: auto; // Permitir scroll solo cuando es necesario
+  width: 100%; // Asegurar que ocupe todo el ancho disponible
+  padding: 16px 0; // Espaciado vertical para no pegar al borde
+}
+
+.impresion-card-destiny {
+  background-color: #d1e0e5;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 800px;
+  box-sizing: border-box; // Asegurar que el padding no expanda la caja
+  margin: 20px 10px; // Margen superior e inferior para separación
+}
+
+.impresion-form-destiny {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  @media (max-width: 768px) { // Para tabletas y móviles, una sola columna
+    grid-template-columns: 1fr;
+  }
+}
+
+.impresion-button-destiny {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.impresion-button-destiny .generate-button {
+  background-color: #306A74;
+  color: white;
+}
+
+.impresion-button-destiny .generate-button:hover {
+  background-color: #27575d;
+}
