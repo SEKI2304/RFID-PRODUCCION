@@ -36,6 +36,7 @@ const EtiquetadoBFX: React.FC = () => {
               <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
+          <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
           <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>MAQUINA</MenuItem>
             {maquinaOptions.map((option) => (
@@ -64,7 +65,6 @@ const EtiquetadoBFX: React.FC = () => {
           <TextField fullWidth label="PESO NETO" variant="outlined" type="number" />
           <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" />
           <TextField fullWidth label="# Piezas (Rollos, Bultos, Cajas)" variant="outlined" type="number" /> {/* Nuevo campo agregado */}
-          <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
         </Box>
         <Box className='impresion-button-bfx'>
           <Button variant="contained" className="generate-button">

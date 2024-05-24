@@ -8,6 +8,13 @@ import ModulosImpresion from './pages/impresion/modulosimpresion/ModulosImpresio
 import EtiquetadoBFX from './pages/impresion/etiquetadobfx/EtiquetadoBFX';
 import EtiquetadoDestiny from './pages/impresion/etiquetadodestiny/EtiquetadoDestiny';
 import EtiquetadoQuality from './pages/impresion/etiquetadoquality/EtiquetadoQuality';
+import ModulosCatalogo from './pages/catalogo/moduloscatalgo/ModulosCatalogo';
+import ProductoBioflex from './pages/catalogo/catalogobfx/CatalogoBFX';
+import ProductoDestinyQuality from './pages/catalogo/catalogodestiny/CatalogoDestiny';
+import Area from './pages/catalogo/catalogoarea/CatalogoArea';
+import Maquina from './pages/catalogo/catalogomaquina/CatalogoMaquina';
+import Operadores from './pages/catalogo/catalogooperador/CatalogoOperador';
+import Turno from './pages/catalogo/catalogoturno/CatalgoTurno';
 
 const Entradas = () => <div>Entradas</div>;
 const Salidas = () => <div>Salidas</div>;
@@ -15,10 +22,6 @@ const Ubicacion = () => <div>Ubicación</div>;
 const Consultas = () => <div>Consultas</div>;
 const Handheld = () => <div>Handheld</div>;
 const Antenas = () => <div>Antenas</div>;
-const Catalogos = () => <div>Catalogos</div>;
-const Bioflex = () => <div>Bioflex</div>;
-const Destiny = () => <div>Destiny</div>;
-const Quality = () => <div>Quality</div>;
 
 function App() {
   return (
@@ -38,14 +41,17 @@ function App() {
             <Route path="/consultas" element={<Consultas />} />
             <Route path="/handheld" element={<Handheld />} />
             <Route path="/antenas" element={<Antenas />} />
-            <Route path="/catalogos" element={<Catalogos />} />
-            <Route path="/bioflex" element={<Bioflex />} />
-            <Route path="/destiny" element={<Destiny />} />
-            <Route path="/quality" element={<Quality />} />
+            <Route path="/catalogos" element={<ModulosCatalogo />} />
+            <Route path="/catalogoBioflex" element={<ProductoBioflex />} />
+            <Route path="/catalogoDestinyQuality" element={<ProductoDestinyQuality />} />
+            <Route path="/catalogoArea" element={<Area />} />
+            <Route path="/catalogoMaquina" element={<Maquina />} />
+            <Route path="/catalogoOperadores" element={<Operadores />} />
+            <Route path="/catalogoTurno" element={<Turno />} />
             <Route path="/modulosimpresion" element={<ModulosImpresion />} />
             <Route path="/impresionBFX" element={<EtiquetadoBFX />} />
             <Route path="/impresionDestiny" element={<EtiquetadoDestiny />} />
-            <Route path="/impresionQuality" element={<EtiquetadoQuality />} /> {/* Nueva ruta para EtiquetadoQuality */}
+            <Route path="/impresionQuality" element={<EtiquetadoQuality />} />
           </Routes>
         </div>
       </div>
@@ -54,4 +60,3 @@ function App() {
 }
 
 export default App;
-

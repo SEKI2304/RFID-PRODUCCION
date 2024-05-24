@@ -1,0 +1,62 @@
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  .modulos-catalogo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+    position: relative;
+  }
+  
+  .modulos-catalogo .back-button {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+  }
+  
+  .modulos-catalogo .title {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  
+  .modulos-catalogo .grid-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .modulos-catalogo .grid-item {
+    display: flex;
+    justify-content: center;
+    margin: 16px;
+  }
+  
+  .modulos-catalogo .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 250px;
+    width: 250px;
+    background-color: #46707e;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+    transition: background-color 0.3s;
+  }
+  
+  .modulos-catalogo .card:hover {
+    background-color: #3b5c6b;
+  }
+  
+  .modulos-catalogo .card-title {
+    margin-top: 16px;
+  }
