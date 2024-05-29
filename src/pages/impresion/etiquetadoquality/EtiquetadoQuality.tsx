@@ -54,7 +54,7 @@ const EtiquetadoQuality: React.FC = () => {
       </IconButton>
       <Box className='impresion-card-quality'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          Generar Etiqueta
+          GENERACION DE ETIQUETA FORMATO QUALITY
         </Typography>
         <Box className='impresion-form-quality'>
           <Select fullWidth displayEmpty value="" onChange={(e) => {}}>

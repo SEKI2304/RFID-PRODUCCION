@@ -27,7 +27,7 @@ const EtiquetadoBFX: React.FC = () => {
       </IconButton>
       <Box className='impresion-card-bfx'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          Generar Etiqueta
+          GENERACION ETIQUETA FORMATO BFX
         </Typography>
         <Box className='impresion-form-bfx'>
           <Select fullWidth defaultValue="" displayEmpty>

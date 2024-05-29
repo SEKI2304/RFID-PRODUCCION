@@ -32,30 +32,28 @@ const EtiquetadoDestiny: React.FC = () => {
       </IconButton>
       <Box className='impresion-card-destiny'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          Generar Etiqueta
+          GENERACION ETIQUETA FORMATO DESTINY
         </Typography>
         <Box className='impresion-form-destiny'>
-          <Select fullWidth value={selectedPT} onChange={(e) => setSelectedPT(e.target.value)} displayEmpty>
-            <MenuItem value="" disabled>PT</MenuItem>
-            {ptOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
-          <TextField fullWidth label="Item Description" value={itemDescription} InputProps={{ readOnly: true }} />
           <Select fullWidth defaultValue="" displayEmpty>
-            <MenuItem value="" disabled>UOM</MenuItem>
-            {uomOptions.map((option) => (
+            <MenuItem value="" disabled>AREA</MenuItem>
+            {areaOptions.map((option) => (
               <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
+          <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
           <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>Maquina</MenuItem>
             {maquinaOptions.map((option) => (
               <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <TextField fullWidth label="Qty/UOM(Eaches)" variant="outlined" type="number" />
-          <TextField fullWidth label="Item#" value={itemNumber} InputProps={{ readOnly: true }} />
+          <Select fullWidth value={selectedPT} onChange={(e) => setSelectedPT(e.target.value)} displayEmpty>
+            <MenuItem value="" disabled>PRODUCTO</MenuItem>
+            {ptOptions.map((option) => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
+          </Select>
           <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>Turno</MenuItem>
             {turnoOptions.map((option) => (
@@ -68,13 +66,23 @@ const EtiquetadoDestiny: React.FC = () => {
               <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <TextField fullWidth label="Peso Neto" variant="outlined" type="number" />
           <TextField fullWidth label="Peso Bruto" variant="outlined" type="number" />
+          <TextField fullWidth label="Peso Neto" variant="outlined" type="number" />
           <TextField fullWidth label="Peso Tarima" variant="outlined" type="number" />
-          <TextField fullWidth label="Total Piezas" variant="outlined" type="number" />
           <TextField fullWidth label="Shipping Units/Pallet" variant="outlined" type="number" />
-          <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
+          <Select fullWidth defaultValue="" displayEmpty>
+            <MenuItem value="" disabled>UOM</MenuItem>
+            {uomOptions.map((option) => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
+          </Select>
           <TextField fullWidth label="Inventory Lot" variant="outlined" type="number" />
+          <TextField fullWidth label="Qty/UOM(Eaches)" variant="outlined" type="number" />
+          <TextField fullWidth label="Pallet ID" variant="outlined" type="number" />
+          <TextField fullWidth label="Costumer PO" variant="outlined" type="number" />
+          <TextField fullWidth label="Total QTY/PALLET (EACHES)" variant="outlined" type="number" />
+          <TextField fullWidth label="Item Description" value={itemDescription} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="Item#" value={itemNumber} InputProps={{ readOnly: true }} />
         </Box>
         <Box className='impresion-button-destiny'>
           <Button variant="contained" className="generate-button">

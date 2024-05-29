@@ -10,7 +10,7 @@ import './moduloscatalogo.scss';
 
 const catalogModules = [
   { icon: <BusinessIcon sx={{ fontSize: 40 }} />, label: 'PRODUCTO BIOFLEX', path: '/catalogoBioflex' },
-  { icon: <BusinessIcon sx={{ fontSize: 40 }} />, label: 'PRODUCTO DESTINY Y QUALITY', path: '/productoDestinyQuality' },
+  { icon: <BusinessIcon sx={{ fontSize: 40 }} />, label: 'PRODUCTO DESTINY Y QUALITY', path: '/catalogoDestinyQuality' },
   { icon: <EngineeringIcon sx={{ fontSize: 40 }} />, label: 'AREA', path: '/area' },
   { icon: <EngineeringIcon sx={{ fontSize: 40 }} />, label: 'MAQUINA', path: '/maquina' },
   { icon: <PeopleIcon sx={{ fontSize: 40 }} />, label: 'OPERADORES', path: '/operadores' },
