@@ -6,6 +6,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import PeopleIcon from '@mui/icons-material/People';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+
 import './moduloscatalogo.scss';
 
 const catalogModules = [
@@ -13,8 +15,9 @@ const catalogModules = [
   { icon: <BusinessIcon sx={{ fontSize: 40 }} />, label: 'PRODUCTO DESTINY Y QUALITY', path: '/catalogoDestinyQuality' },
   { icon: <EngineeringIcon sx={{ fontSize: 40 }} />, label: 'AREA', path: '/catalogoArea' },
   { icon: <EngineeringIcon sx={{ fontSize: 40 }} />, label: 'MAQUINA', path: '/catalogoMaquina' },
-  { icon: <PeopleIcon sx={{ fontSize: 40 }} />, label: 'OPERADORES', path: '/operadores' },
-  { icon: <AccessTimeIcon sx={{ fontSize: 40 }} />, label: 'TURNO', path: '/turno' }
+  { icon: <PeopleIcon sx={{ fontSize: 40 }} />, label: 'OPERADORES', path: '/catalogoOperadores' },
+  { icon: <AccessTimeIcon sx={{ fontSize: 40 }} />, label: 'TURNO', path: '/catalogoTurno' },
+  { icon: <ListAltIcon sx={{ fontSize: 40 }} />, label: 'ÓRDENES', path: '/catalogoOrdenes' }
 ];
 
 const ModulosCatalogo: React.FC = () => {

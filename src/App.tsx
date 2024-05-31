@@ -15,6 +15,7 @@ import Area from './pages/catalogo/catalogoarea/CatalogoArea';
 import Maquina from './pages/catalogo/catalogomaquina/CatalogoMaquina';
 import Operadores from './pages/catalogo/catalogooperador/CatalogoOperador';
 import Turno from './pages/catalogo/catalogoturno/CatalgoTurno';
+import Ordenes from './pages/catalogo/catalogoordenes/CatalogoOrdenes';
 
 const Entradas = () => <div>Entradas</div>;
 const Salidas = () => <div>Salidas</div>;
@@ -49,6 +50,7 @@ function App() {
             <Route path="/catalogoOperadores" element={<Operadores />} />
             <Route path="/catalogoTurno" element={<Turno />} />
             <Route path="/modulosimpresion" element={<ModulosImpresion />} />
+            <Route path='/catalogoOrdenes' element={<Ordenes />}/>
             <Route path="/impresionBFX" element={<EtiquetadoBFX />} />
             <Route path="/impresionDestiny" element={<EtiquetadoDestiny />} />
             <Route path="/impresionQuality" element={<EtiquetadoQuality />} />

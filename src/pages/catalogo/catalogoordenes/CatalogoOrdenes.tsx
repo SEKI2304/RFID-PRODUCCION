@@ -10,20 +10,23 @@ import {
   GridColDef,
   GridColumnVisibilityModel,
 } from '@mui/x-data-grid';
-import './catalogoturno.scss';
+import './catalogoordenes.scss';
 
 const columns: GridColDef[] = [
   { field: 'id', headerName: 'ID', width: 100 },
-  { field: 'turno', headerName: 'Turno', width: 150 },
+  { field: 'orden', headerName: 'Orden', width: 150 },
+  { field: 'claveProducto', headerName: 'Clave del Producto', width: 200 },
+  { field: 'producto', headerName: 'Producto', width: 500 },
+  { field: 'ultimoProceso', headerName: 'Último Proceso', width: 200 }
 ];
 
-const CatalogoTurno: React.FC = () => {
+const CatalogoOrdenes: React.FC = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState<GridRowsProp>([]);
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({});
 
   useEffect(() => {
-    axios.get('https://localhost:7204/api/Turn')
+    axios.get('https://localhost:7204/api/Order')
       .then((response) => {
         setRows(response.data);
       })
@@ -33,7 +36,7 @@ const CatalogoTurno: React.FC = () => {
   }, []);
 
   return (
-    <div className='catalogo-turno'>
+    <div className='catalogo-ordenes'>
       <IconButton
         onClick={() => navigate('/catalogos')}
         sx={{
@@ -46,15 +49,15 @@ const CatalogoTurno: React.FC = () => {
       </IconButton>
       <Box sx={{ width: '100%', textAlign: 'center', mb: 4 }}>
         <Typography variant="h4" sx={{ textAlign: 'center', mt: 4, mb: 4 }}>
-          Catálogo de Turnos
+          Catálogo de Órdenes
         </Typography>
       </Box>
       <Box sx={{ width: '100%', textAlign: 'center', mb: 4 }}>
         <DataGrid
           columns={columns}
           rows={rows}
-          disableDensitySelector
           disableColumnFilter
+          disableDensitySelector
           disableColumnSelector
           slots={{ toolbar: GridToolbar }}
           slotProps={{ toolbar: { showQuickFilter: true } }}
@@ -74,4 +77,4 @@ const CatalogoTurno: React.FC = () => {
   );
 };
 
-export default CatalogoTurno;
+export default CatalogoOrdenes;
