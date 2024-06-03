@@ -57,7 +57,7 @@ const EtiquetadoBFX: React.FC = () => {
   const [pesoNeto, setPesoNeto] = useState<number | undefined>();
   const [pesoTarima, setPesoTarima] = useState<number | undefined>();
   const [piezas, setPiezas] = useState<number | undefined>();
-
+  const [selectedOperador, setSelectedOperador] = useState<number | undefined>();
 
   useEffect(() => {
     // Carga inicial de áreas y turnos
@@ -93,7 +93,6 @@ const EtiquetadoBFX: React.FC = () => {
   }, [selectedArea, selectedOrden]);
 
   useEffect(() => {
-    // Carga de operadores basada en la selección de área y turno
     if (selectedArea && selectedTurno) {
       axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}&IdTurno=${selectedTurno}`)
         .then(response => {
@@ -104,12 +103,14 @@ const EtiquetadoBFX: React.FC = () => {
   }, [selectedArea, selectedTurno]);
   
   const handleGenerateEtiqueta = () => {
+    
   const area = areas.find(a => a.id === selectedArea)?.area;
   const orden = ordenes.find(o => o.id === selectedOrden)?.orden;
   const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
   const producto = filteredProductos.join(', ');
   const turno = turnos.find(t => t.id === selectedTurno)?.turno;
   const operador = operadores.find(o => o.id === selectedTurno)?.nombreCompleto;
+  const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
 
   console.log(area);
   console.log(orden);
@@ -120,8 +121,8 @@ const EtiquetadoBFX: React.FC = () => {
     area: area || '',
     claveProducto: producto.split(' ')[0],
     nombreProducto: producto.split(' ').slice(1).join(' '),
-    claveOperador: '',
-    operador: operador || '',
+    claveOperador: operadorSeleccionado ? operadorSeleccionado.id.toString() : '',
+    operador: operadorSeleccionado ? operadorSeleccionado.nombreCompleto : '',
     turno: turno || '',
     pesoTarima: pesoTarima || 0,
     pesoBruto: pesoBruto || 0,
@@ -208,14 +209,16 @@ const EtiquetadoBFX: React.FC = () => {
             ))}
           </Select>
           <Select
-            fullWidth
-            displayEmpty
-          >
-            <MenuItem value="" disabled>Operador</MenuItem>
-            {operadores.map(operador => (
-              <MenuItem key={operador.id} value={operador.id}>{operador.nombreCompleto}</MenuItem>
-            ))}
-          </Select>
+          value={selectedOperador}
+          onChange={(e) => setSelectedOperador(parseInt(e.target.value as string))}
+          displayEmpty
+          fullWidth
+        >
+          <MenuItem value="" disabled>Operador</MenuItem>
+          {operadores.map(operador => (
+            <MenuItem key={operador.id} value={operador.id}>{operador.nombreCompleto}</MenuItem>
+          ))}
+        </Select>
           <TextField fullWidth label="PESO BRUTO" variant="outlined" type="number" value={pesoBruto} onChange={e => setPesoBruto(parseFloat(e.target.value))} />
           <TextField fullWidth label="PESO NETO" variant="outlined" type="number" value={pesoNeto} onChange={e => setPesoNeto(parseFloat(e.target.value))} />
           <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" value={pesoTarima} onChange={e => setPesoTarima(parseFloat(e.target.value))} />
