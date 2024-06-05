@@ -30,6 +30,7 @@ interface Turno {
 interface Operador {
   id: number;
   nombreCompleto: string;
+  numNomina: string;
 }
 
 interface Orden {
@@ -203,14 +204,18 @@ const EtiquetadoBFX: React.FC = () => {
             ))}
           </Select>
           <Select
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Producto</MenuItem>
-            {filteredProductos.map((producto, index) => (
-              <MenuItem key={index} value={producto}>{producto}</MenuItem>
-            ))}
-          </Select>
+              displayEmpty
+              fullWidth
+            >
+              <MenuItem value="" disabled>Producto</MenuItem>
+              {filteredProductos.map((producto, index) => {
+                const [claveProducto, ...rest] = producto.split(' ');
+                const nombreProducto = rest.join(' ');
+                return (
+                  <MenuItem key={index} value={producto}>{claveProducto} - {nombreProducto}</MenuItem>
+                );
+              })}
+            </Select>
           <Select
             value={selectedTurno}
             onChange={e => setSelectedTurno(e.target.value as number)}
@@ -229,8 +234,10 @@ const EtiquetadoBFX: React.FC = () => {
             fullWidth
           >
             <MenuItem value="" disabled>Operador</MenuItem>
-            {operadores.map(operador => (
-              <MenuItem key={operador.id} value={operador.id}>{operador.nombreCompleto}</MenuItem>
+            {operadores.map((operador) => (
+              <MenuItem key={operador.id} value={operador.id}>
+                {operador.id} - {operador.nombreCompleto}
+              </MenuItem>
             ))}
           </Select>
           <TextField fullWidth label="PESO BRUTO" variant="outlined" type="number" value={pesoBruto} onChange={e => setPesoBruto(parseFloat(e.target.value))} />
@@ -279,8 +286,9 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>Turno:</strong> {turnos.find(t => t.id === selectedTurno)?.turno}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
-            </div>
+            <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.id} - {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
+          </div>
+
             <div className="row">
               <Typography><strong>Peso Bruto:</strong> {pesoBruto}</Typography>
             </div>
