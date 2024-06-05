@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal, Paper,  } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
+
 interface Area {
   id: number;
   area: string;
@@ -14,7 +15,8 @@ interface Area {
 interface Maquina {
   id: number;
   maquina: string;
-  areaId: number;
+  area: number;
+  no: string;
 }
 
 interface Producto {
@@ -44,8 +46,6 @@ interface Orden {
 const EtiquetadoBFX: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
-  const [maquinas, setMaquinas] = useState<Maquina[]>([]);
-  const [productos, setProductos] = useState<Orden[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
@@ -62,6 +62,8 @@ const EtiquetadoBFX: React.FC = () => {
   const [selectedOperador, setSelectedOperador] = useState<number | undefined>();
   const [openModal, setOpenModal] = useState(false);
   const [currentDate, setCurrentDate] = useState<string>('');
+  const [trazabilidad, setTrazabilidad] = useState<string>('');
+  const [rfid, setRfid] = useState<string>('');
 
   useEffect(() => {
     // Carga inicial de áreas y turnos
@@ -110,6 +112,7 @@ const EtiquetadoBFX: React.FC = () => {
     const today = new Date();
     const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
     setCurrentDate(formattedDate);
+    generateTrazabilidad(); // Generar trazabilidad y RFID antes de abrir el modal
     setOpenModal(true);
   };
 
@@ -117,6 +120,39 @@ const EtiquetadoBFX: React.FC = () => {
 
   const handleGenerateEtiqueta = () => {
     handleOpenModal();
+  };
+
+  const generateTrazabilidad = () => {
+    const base = '2';
+    const areaMap = {
+      'EXTRUSIÓN': '1',
+      'IMPRESIÓN': '2',
+      'REFILADO': '3',
+      'BOLSEO': '4',
+      'POUCH': '5',
+      'LAMINADO 1': '6'
+    } as const;
+
+    const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
+    
+    // Verificar si selectedAreaName es una clave válida en areaMap
+    let areaCode = '0';
+    if (selectedAreaName in areaMap) {
+      areaCode = areaMap[selectedAreaName as keyof typeof areaMap];
+    }
+
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
+    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
+
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
+    const ordenCode = ordenNo ? ordenNo.padStart(6, '0') : '000000';
+
+    const consecutivo = '001'; // This should be dynamically calculated based on existing records
+
+    const trazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${consecutivo}`;
+    const rfid = `000${trazabilidad}`;
+    setTrazabilidad(trazabilidad);
+    setRfid(rfid);
   };
 
   const handleConfirmEtiqueta = () => {
@@ -136,16 +172,16 @@ const EtiquetadoBFX: React.FC = () => {
       area: area || '',
       claveProducto: producto.split(' ')[0],
       nombreProducto: producto.split(' ').slice(1).join(' '),
-      claveOperador: operadorSeleccionado ? operadorSeleccionado.id.toString() : '',
-      operador: operadorSeleccionado ? operadorSeleccionado.nombreCompleto : '',
+      claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
+      operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
       turno: turno || '',
       pesoTarima: pesoTarima || 0,
       pesoBruto: pesoBruto || 0,
       pesoNeto: pesoNeto || 0,
       piezas: piezas || 0,
-      trazabilidad: '',
+      trazabilidad: trazabilidad,
       orden: orden || '',
-      rfid: '',
+      rfid: rfid,
       status: 0
     };
 
@@ -172,7 +208,7 @@ const EtiquetadoBFX: React.FC = () => {
         <Box className='impresion-form-bfx'>
           <Select
             value={selectedArea}
-            onChange={e => setSelectedArea(e.target.value as number)}
+            onChange={(e) => setSelectedArea(e.target.value as number)}
             displayEmpty
             fullWidth
           >
@@ -204,18 +240,18 @@ const EtiquetadoBFX: React.FC = () => {
             ))}
           </Select>
           <Select
-              displayEmpty
-              fullWidth
-            >
-              <MenuItem value="" disabled>Producto</MenuItem>
-              {filteredProductos.map((producto, index) => {
-                const [claveProducto, ...rest] = producto.split(' ');
-                const nombreProducto = rest.join(' ');
-                return (
-                  <MenuItem key={index} value={producto}>{claveProducto} - {nombreProducto}</MenuItem>
-                );
-              })}
-            </Select>
+            displayEmpty
+            fullWidth
+          >
+            <MenuItem value="" disabled>Producto</MenuItem>
+            {filteredProductos.map((producto, index) => {
+              const [claveProducto, ...rest] = producto.split(' ');
+              const nombreProducto = rest.join(' ');
+              return (
+                <MenuItem key={index} value={producto}>{claveProducto} - {nombreProducto}</MenuItem>
+              );
+            })}
+          </Select>
           <Select
             value={selectedTurno}
             onChange={e => setSelectedTurno(e.target.value as number)}
@@ -236,7 +272,7 @@ const EtiquetadoBFX: React.FC = () => {
             <MenuItem value="" disabled>Operador</MenuItem>
             {operadores.map((operador) => (
               <MenuItem key={operador.id} value={operador.id}>
-                {operador.id} - {operador.nombreCompleto}
+                {operador.numNomina} - {operador.nombreCompleto}
               </MenuItem>
             ))}
           </Select>
@@ -247,7 +283,7 @@ const EtiquetadoBFX: React.FC = () => {
         </Box>
         <Box className='impresion-button-bfx'>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
-              VISTA PREVIA
+            VISTA PREVIA
           </Button>
         </Box>
       </Box>
@@ -286,14 +322,13 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>Turno:</strong> {turnos.find(t => t.id === selectedTurno)?.turno}</Typography>
             </div>
             <div className="row">
-            <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.id} - {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
-          </div>
-
+              <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.numNomina} - {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
+            </div>
             <div className="row">
               <Typography><strong>Peso Bruto:</strong> {pesoBruto}</Typography>
             </div>
             <div className="row">
-                            <Typography><strong>Peso Neto:</strong> {pesoNeto}</Typography>
+              <Typography><strong>Peso Neto:</strong> {pesoNeto}</Typography>
             </div>
             <div className="row">
               <Typography><strong>Peso Tarima:</strong> {pesoTarima}</Typography>
@@ -302,10 +337,10 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong># Piezas (Rollos, Bultos, Cajas):</strong> {piezas}</Typography>
             </div>
             <div className="row">
-              <Typography><strong> Codigo de Trazabilidad: </strong> {piezas}</Typography>
+              <Typography><strong>Codigo de Trazabilidad:</strong> {trazabilidad}</Typography>
             </div>
             <div className="row">
-            <Typography><strong>OT Y/O LOTE:</strong> {ordenes.find(o => o.id === selectedOrden)?.orden}</Typography>
+              <Typography><strong>OT Y/O LOTE:</strong> {ordenes.find(o => o.id === selectedOrden)?.orden}</Typography>
             </div>
           </Box>
           <Box className="modal-footer">
