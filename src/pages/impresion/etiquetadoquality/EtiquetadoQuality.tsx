@@ -4,45 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import './etiquetadoquality.scss';
 
-interface Option {
-  label: string;
-  value: string;
-}
+// Dummy data para los dropdowns y campos automáticos
+const areaOptions = ['REFILADO', 'BOLSEO', 'IMPRESION', 'POUCH'];
+const ptOptions = ['PT00316', 'PT00789'];
+const uomOptions = ['PCS', 'BOX', 'PLT'];
+const maquinaOptions = ['017 maquina kenworth', '018 maquina ford', '019 maquina toyota'];
+const turnoOptions = ['NEGRO', 'VERDE', 'ROJO', 'AZUL'];
+const operadorOptions = ['1245 - Maria Lopez Becerrar', '1246 - Juan Perez Martinez', '1247 - Ana Gomez Ruiz'];
 
-const areaOptions: Option[] = [
-  { label: 'REFILADO', value: 'REFILADO' },
-  { label: 'BOLSEO', value: 'BOLSEO' },
-  { label: 'IMPRESION', value: 'IMPRESION' },
-  { label: 'POUCH', value: 'POUCH' }
-];
-const ptOptions: Option[] = [
-  { label: 'PT00316', value: 'PT00316' },
-  { label: 'PT00789', value: 'PT00789' }
-];
-const uomOptions: Option[] = [
-  { label: 'PCS', value: 'PCS' },
-  { label: 'BOX', value: 'BOX' },
-  { label: 'PLT', value: 'PLT' }
-];
-const maquinaOptions: Option[] = [
-  { label: '017 maquina kenworth', value: '017 maquina kenworth' },
-  { label: '018 maquina ford', value: '018 maquina ford' },
-  { label: '019 maquina toyota', value: '019 maquina toyota' }
-];
-const turnoOptions: Option[] = [
-  { label: 'NEGRO', value: 'NEGRO' },
-  { label: 'VERDE', value: 'VERDE' },
-  { label: 'ROJO', value: 'ROJO' },
-  { label: 'AZUL', value: 'AZUL' }
-];
-const operadorOptions: Option[] = [
-  { label: '1245 - Maria Lopez Becerrar', value: '1245 - Maria Lopez Becerrar' },
-  { label: '1246 - Juan Perez Martinez', value: '1246 - Juan Perez Martinez' },
-  { label: '1247 - Ana Gomez Ruiz', value: '1247 - Ana Gomez Ruiz' }
-];
 
 const EtiquetadoQuality: React.FC = () => {
   const navigate = useNavigate();
+    // Estado para manejar la selección de PT y actualizar otros campos automáticamente
+  const [selectedPT, setSelectedPT] = React.useState('');
+
+  // Simular la obtención de información basada en el PT seleccionado
+  const itemDescription = selectedPT === 'PT00316' ? 'ROMAINE HEARTS 3CL' : 'PRODUCT XYZ';
+  const itemNumber = selectedPT === 'PT00316' ? 'ITEM001' : 'ITEM002';
 
   return (
     <div className='impresion-container-quality'>
@@ -52,53 +30,52 @@ const EtiquetadoQuality: React.FC = () => {
       >
         <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
       </IconButton>
-      <Box className='impresion-card-quality'>
+      <Box className='impresion-card-destiny'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          GENERACION DE ETIQUETA FORMATO QUALITY
+          GENERACION ETIQUETA FORMATO QUALITY
         </Typography>
-        <Box className='impresion-form-quality'>
-          <Select fullWidth displayEmpty value="" onChange={(e) => {}}>
-            <MenuItem value="" disabled>PT</MenuItem>
-            {ptOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+        <Box className='impresion-form-destiny'>
+          <Select fullWidth defaultValue="" displayEmpty>
+            <MenuItem value="" disabled>AREA</MenuItem>
+            {areaOptions.map((option) => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <TextField fullWidth label="Item Description" InputProps={{ readOnly: true }} />
-          <Select fullWidth displayEmpty value="" onChange={(e) => {}}>
-            <MenuItem value="" disabled>UOM</MenuItem>
-            {uomOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
-            ))}
-          </Select>
-          <Select fullWidth displayEmpty value="" onChange={(e) => {}}>
+          <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
+          <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>Maquina</MenuItem>
             {maquinaOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <TextField fullWidth label="Qty/UOM(Eaches)" type="number" variant="outlined" />
-          <TextField fullWidth label="Item#" InputProps={{ readOnly: true }} />
-          <Select fullWidth displayEmpty value="" onChange={(e) => {}}>
+          <Select fullWidth value={selectedPT} onChange={(e) => setSelectedPT(e.target.value)} displayEmpty>
+            <MenuItem value="" disabled>PRODUCTO</MenuItem>
+            {ptOptions.map((option) => (
+              <MenuItem key={option} value={option}>{option}</MenuItem>
+            ))}
+          </Select>
+          <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>Turno</MenuItem>
             {turnoOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <Select fullWidth displayEmpty value="" onChange={(e) => {}}>
+          <Select fullWidth defaultValue="" displayEmpty>
             <MenuItem value="" disabled>Operador</MenuItem>
             {operadorOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              <MenuItem key={option} value={option}>{option}</MenuItem>
             ))}
           </Select>
-          <TextField fullWidth label="Peso Neto" type="number" variant="outlined" />
-          <TextField fullWidth label="Peso Bruto" type="number" variant="outlined" />
-          <TextField fullWidth label="Peso Tarima" type="number" variant="outlined" />
-          <TextField fullWidth label="Total Piezas" type="number" variant="outlined" />
-          <TextField fullWidth label="Shipping Units/Pallet" type="number" variant="outlined" />
-          <TextField fullWidth label="OT Y/O LOTE" type="number" variant="outlined" />
-          <TextField fullWidth label="Inventory Lot" type="number" variant="outlined" />
+          <TextField fullWidth label="Peso Bruto" variant="outlined" type="number" />
+          <TextField fullWidth label="Peso Neto" variant="outlined" type="number" />
+          <TextField fullWidth label="Peso Tarima" variant="outlined" type="number" />
+          <TextField fullWidth label="Total Qty/Pallet(Eaches)" variant="outlined" type="number" />
+          <TextField fullWidth label="Lot" variant="outlined" type="number" />
+          <TextField fullWidth label="TRACEABILITY CODE" variant="outlined" type="number" />
+          <TextField fullWidth label="Item" value={itemDescription} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="QPS ITEM#" value={itemNumber} InputProps={{ readOnly: true }} />
         </Box>
-        <Box className='impresion-button-quality'>
+        <Box className='impresion-button-destiny'>
           <Button variant="contained" className="generate-button">
             GENERAR ETIQUETA
           </Button>
