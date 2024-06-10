@@ -50,7 +50,7 @@ const EtiquetadoBFX: React.FC = () => {
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [filteredMaquinas, setFilteredMaquinas] = useState<Maquina[]>([]);
-  const [filteredProductos, setFilteredProductos] = useState<string[]>([]);
+  const [filteredProductos, setFilteredProductos] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<number | undefined>();
   const [selectedTurno, setSelectedTurno] = useState<number | undefined>();
   const [selectedMaquina, setSelectedMaquina] = useState<number | undefined>();
@@ -64,9 +64,9 @@ const EtiquetadoBFX: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<string>('');
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
+  
 
   useEffect(() => {
-    // Carga inicial de áreas y turnos
     axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
       setAreas(response.data);
     });
@@ -77,26 +77,24 @@ const EtiquetadoBFX: React.FC = () => {
 
   useEffect(() => {
     if (selectedArea) {
-      // Carga de órdenes basadas en el área seleccionada
-      axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+      const areaName = areas.find(a => a.id === selectedArea)?.area;
+      axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
-      // Carga de máquinas basadas en el área seleccionada
-      axios.get<Maquina[]>(`https://localhost:7204/api/Machine?areaId=${selectedArea}`).then(response => {
-        setFilteredMaquinas(response.data);
-      });
-    }
-  }, [selectedArea]);
 
-  useEffect(() => {
-    if (selectedArea && selectedOrden) {
-      // Carga de productos basados en el área y la orden seleccionada
-      axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
-        const filtered = response.data.filter(orden => orden.id === selectedOrden);
-        setFilteredProductos(filtered.map(orden => `${orden.claveProducto} ${orden.producto}`));
-      });
+      axios.get<Maquina[]>(`https://localhost:7204/api/Machine/${selectedArea}`)
+        .then(response => {
+          setFilteredMaquinas(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching machines for area ID:', selectedArea, error);
+          setFilteredMaquinas([]); // Limpia las máquinas si hay un error
+        });
+    } else {
+      setOrdenes([]);
+      setFilteredMaquinas([]);
     }
-  }, [selectedArea, selectedOrden]);
+  }, [selectedArea, areas]);
 
   useEffect(() => {
     if (selectedArea && selectedTurno) {
@@ -107,6 +105,19 @@ const EtiquetadoBFX: React.FC = () => {
         .catch(error => console.error('Error fetching data:', error));
     }
   }, [selectedArea, selectedTurno]);
+
+  useEffect(() => {
+  if (selectedArea && selectedOrden) {
+    axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+      const orden = response.data.find(orden => orden.id === selectedOrden);
+      if (orden) {
+        const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
+        setFilteredProductos(productoConcatenado); // Correcto para una cadena simple
+      }
+    });
+  }
+}, [selectedArea, selectedOrden]);
+  
 
   const handleOpenModal = () => {
     const today = new Date();
@@ -122,52 +133,52 @@ const EtiquetadoBFX: React.FC = () => {
     handleOpenModal();
   };
 
-  const generateTrazabilidad = () => {
+  const generateTrazabilidad = async () => {
     const base = '2';
-    const areaMap = {
+    const areaMap: { [key: string]: string } = {
       'EXTRUSIÓN': '1',
       'IMPRESIÓN': '2',
       'REFILADO': '3',
       'BOLSEO': '4',
       'POUCH': '5',
       'LAMINADO 1': '6'
-    } as const;
+    };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    
-    // Verificar si selectedAreaName es una clave válida en areaMap
-    let areaCode = '0';
-    if (selectedAreaName in areaMap) {
-      areaCode = areaMap[selectedAreaName as keyof typeof areaMap];
-    }
-
+    let areaCode = areaMap[selectedAreaName] || '0';
     const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
     const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
-
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.padStart(6, '0') : '000000';
+    const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
 
-    const consecutivo = '001'; // This should be dynamically calculated based on existing records
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
-    const trazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${consecutivo}`;
-    const rfid = `000${trazabilidad}`;
-    setTrazabilidad(trazabilidad);
-    setRfid(rfid);
+    try {
+      const response = await axios.get('https://localhost:7204/api/RfidLabel');
+      const rfidLabels = response.data;
+
+      const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
+      const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
+      const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
+      const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
+
+      const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
+      setTrazabilidad(fullTrazabilidad);
+      setRfid(`0000${fullTrazabilidad}`);
+    } catch (error) {
+      console.error('Error fetching RfidLabel data:', error);
+      setTrazabilidad(`${partialTrazabilidad}001`);
+      setRfid(`0000${partialTrazabilidad}001`);
+    }
   };
 
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden;
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos.join(', ');
+    const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
-
-    console.log(area);
-    console.log(orden);
-    console.log(pesoNeto);
-
-    // Datos a enviar a la API
     const data = {
       area: area || '',
       claveProducto: producto.split(' ')[0],
@@ -185,7 +196,6 @@ const EtiquetadoBFX: React.FC = () => {
       status: 0
     };
 
-    // Realizar el POST a la API
     axios.post('https://localhost:7204/api/RfidLabel', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
@@ -239,19 +249,16 @@ const EtiquetadoBFX: React.FC = () => {
               <MenuItem key={maquina.id} value={maquina.id}>{maquina.maquina}</MenuItem>
             ))}
           </Select>
-          <Select
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Producto</MenuItem>
-            {filteredProductos.map((producto, index) => {
-              const [claveProducto, ...rest] = producto.split(' ');
-              const nombreProducto = rest.join(' ');
-              return (
-                <MenuItem key={index} value={producto}>{claveProducto} - {nombreProducto}</MenuItem>
-              );
-            })}
-          </Select>
+          <TextField
+              fullWidth
+              label="Producto"
+              value={filteredProductos} // Ahora es una string directa, no un array
+              InputProps={{
+                readOnly: true,
+              }}
+              variant="outlined"
+            />
+
           <Select
             value={selectedTurno}
             onChange={e => setSelectedTurno(e.target.value as number)}
@@ -288,15 +295,15 @@ const EtiquetadoBFX: React.FC = () => {
         </Box>
       </Box>
       <Modal open={openModal} onClose={handleCloseModal}>
-        <Paper className="modal-content">
-          <Box className="modal-header">
+        <Paper className="bfx-modal-content">
+          <Box className="bfx-modal-header">
             <Typography variant="h6">Vista Previa de la Etiqueta</Typography>
             <IconButton onClick={handleCloseModal}>
               <CloseIcon />
             </IconButton>
           </Box>
-          <Box className="modal-body">
-            <div className="row">
+          <Box className="bfx-modal-body">
+          <div className="row">
               <img src={EtiquetaImpresion} alt="" className="img-etiquetado" />
             </div>
             <div className="row">
@@ -309,7 +316,7 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>Fecha:</strong> {currentDate}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Producto:</strong> {filteredProductos.join(', ')}</Typography>
+            <Typography><strong>Producto:</strong> {filteredProductos}</Typography>
             </div>
             <div className="row"></div>
             <div className="row">
@@ -343,7 +350,7 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>OT Y/O LOTE:</strong> {ordenes.find(o => o.id === selectedOrden)?.orden}</Typography>
             </div>
           </Box>
-          <Box className="modal-footer">
+          <Box className="bfx-modal-footer">
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir
             </Button>
