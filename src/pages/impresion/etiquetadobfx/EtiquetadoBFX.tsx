@@ -196,7 +196,7 @@ const EtiquetadoBFX: React.FC = () => {
       status: 0
     };
 
-    axios.post('https://localhost:7204/api/RfidLabel', data)
+    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         handleCloseModal();
