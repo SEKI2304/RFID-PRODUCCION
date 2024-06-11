@@ -5,12 +5,14 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BioflexImage from '../../../assets/bioflex.png';
 import DestinyImage from '../../../assets/destiny.png'; 
 import QualityImage from '../../../assets/quality.png';
+import ReymaImage from '../../../assets/Reyma.png';
 import './modulosimpresion.scss';
 
 const modules = [
   { image: BioflexImage, label: 'BIOFLEX', path: '/impresionBFX' },
   { image: DestinyImage, label: 'DESTINY', path: '/impresionDestiny' },
   { image: QualityImage, label: 'QUALITY', path: '/impresionQuality' },
+  { image: ReymaImage, label: 'VASO', path: '/impresionVaso' },
 ];
 
 const ModulosImpresion: React.FC = () => {

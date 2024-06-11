@@ -10,12 +10,14 @@ import EtiquetadoDestiny from './pages/impresion/etiquetadodestiny/EtiquetadoDes
 import EtiquetadoQuality from './pages/impresion/etiquetadoquality/EtiquetadoQuality';
 import ModulosCatalogo from './pages/catalogo/moduloscatalgo/ModulosCatalogo';
 import ProductoBioflex from './pages/catalogo/catalogobfx/CatalogoBFX';
-import ProductoDestinyQuality from './pages/catalogo/catalogodestiny/CatalogoDestiny';
+import ProductoDestiny from './pages/catalogo/catalogodestiny/CatalogoDestiny';
 import Area from './pages/catalogo/catalogoarea/CatalogoArea';
 import Maquina from './pages/catalogo/catalogomaquina/CatalogoMaquina';
 import Operadores from './pages/catalogo/catalogooperador/CatalogoOperador';
 import Turno from './pages/catalogo/catalogoturno/CatalgoTurno';
 import Ordenes from './pages/catalogo/catalogoordenes/CatalogoOrdenes';
+import ProductoQuality from './pages/catalogo/catalogoquality/CatalogoQuality';
+
 
 const Entradas = () => <div>Entradas</div>;
 const Salidas = () => <div>Salidas</div>;
@@ -44,7 +46,8 @@ function App() {
             <Route path="/antenas" element={<Antenas />} />
             <Route path="/catalogos" element={<ModulosCatalogo />} />
             <Route path="/catalogoBioflex" element={<ProductoBioflex />} />
-            <Route path="/catalogoDestinyQuality" element={<ProductoDestinyQuality />} />
+            <Route path="/catalogoDestiny" element={<ProductoDestiny />} />
+            <Route path="/catalogoQuality" element={<ProductoQuality />} />
             <Route path="/catalogoArea" element={<Area />} />
             <Route path="/catalogoMaquina" element={<Maquina />} />
             <Route path="/catalogoOperadores" element={<Operadores />} />

@@ -191,34 +191,39 @@ React.useEffect(() => {
       'POUCH': '5',
       'LAMINADO 1': '6'
     };
-
+  
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
     let areaCode = areaMap[selectedAreaName] || '0';
-    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
-    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
+    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina);
+    const maquinaCode = maquina ? maquina.no.padStart(2, '0') : '00';
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
     const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
-
+    const today = new Date();
+    const formattedDate = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(2)}`;
+  
     const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
-
+  
     try {
       const response = await axios.get('https://localhost:7204/api/RfidLabel');
       const rfidLabels = response.data;
-
       const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
       const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
       const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
-      const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
-
-      const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
+      const consecutivoStr = nextConsecutivo.toString().padStart(2, '0');  // Ajusta a 2 dígitos para el Pallet ID
+  
+      const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr.padStart(3, '0')}`; // Asegúrate de que la trazabilidad usa 3 dígitos
+      const palletId = `${maquinaCode}${formattedDate}${consecutivoStr}`; // Construye el Pallet ID
+  
       setTrazabilidad(fullTrazabilidad);
       setRfid(`0000${fullTrazabilidad}`);
+      setPalletID(palletId); // Guarda el Pallet ID generado
     } catch (error) {
       console.error('Error fetching RfidLabel data:', error);
       setTrazabilidad(`${partialTrazabilidad}001`);
       setRfid(`0000${partialTrazabilidad}001`);
     }
   };
+  
 
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -356,7 +361,14 @@ React.useEffect(() => {
               value={qtyUOM}
               onChange={handleQtyUOMChange}
           />
-          <TextField fullWidth label="Pallet ID" variant="outlined" type="number" value={palletID} onChange={(e) => setPalletID(e.target.value)} />
+          <TextField
+            fullWidth
+            label="Pallet ID"
+            variant="outlined"
+            type="number"
+            value={palletID} // Se muestra el Pallet ID generado
+            InputProps={{ readOnly: true }} // Hace el campo de solo lectura si no requieres que sea editable
+          />
           <TextField
               fullWidth
               label="Shipping Units/Pallet"
