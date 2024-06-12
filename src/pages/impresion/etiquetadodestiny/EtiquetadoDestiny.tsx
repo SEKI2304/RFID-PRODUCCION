@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -40,6 +40,9 @@ interface Orden {
   claveProducto: string;
   producto: string;
   areaId: number;
+  customerPO?: string;
+  itemDescription?: string;
+  itemNumber?: string;
 }
 
 const EtiquetadoDestiny: React.FC = () => {
@@ -71,23 +74,23 @@ const EtiquetadoDestiny: React.FC = () => {
   const [customerPO, setCustomerPO] = React.useState<string>("");
   const [itemDescription, setItemDescription] = React.useState<string>("");
   const [itemNumber, setItemNumber] = React.useState<string>("");
-  
+  const [bioFlexLabelId, setBioFlexLabelId] = useState<number | null>(null);
 
   const calculatePieces = () => {
     const qtyNumber = parseFloat(qtyUOM) || 0;
     const unitsNumber = parseFloat(shippingUnits) || 0;
     setPiezas(qtyNumber * unitsNumber);
   };
+
   const handleQtyUOMChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setQtyUOM(event.target.value);
     calculatePieces();
   };
 
-    const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setShippingUnits(event.target.value);
-        calculatePieces();
-    };
-
+  const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setShippingUnits(event.target.value);
+    calculatePieces();
+  };
 
   useEffect(() => {
     axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
@@ -136,11 +139,16 @@ const EtiquetadoDestiny: React.FC = () => {
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Correcto para una cadena simple
+
+          // Set the related fields from the order
+          setCustomerPO(orden.customerPO || "");
+          setItemDescription(orden.itemDescription || "");
+          setItemNumber(orden.itemNumber || "");
         }
       });
     }
   }, [selectedArea, selectedOrden]);
-  
+
   useEffect(() => {
     if (qtyUOM && shippingUnits) {
       const calculatedPieces = parseInt(qtyUOM) * parseInt(shippingUnits);
@@ -149,23 +157,22 @@ const EtiquetadoDestiny: React.FC = () => {
   }, [qtyUOM, shippingUnits]);
 
   // Definir el tipo para el objeto de mapeo.
-interface UOMMap {
-  [key: number]: string;
-}
-
-const areaIdToUOM: UOMMap = {
-  3: 'ROLLS', // ID correspondiente a REFILADO
-  4: 'CASES', // ID correspondiente a BOLSEO
-  5: 'BAGS'   // ID correspondiente a POUCH
-};
-
-React.useEffect(() => {
-  if (selectedArea) {
-    const uom = areaIdToUOM[selectedArea] || ''; // Usamos el ID del área directamente
-    setSelectedUOM(uom);
+  interface UOMMap {
+    [key: number]: string;
   }
-}, [selectedArea]);
 
+  const areaIdToUOM: UOMMap = {
+    3: 'ROLLS', // ID correspondiente a REFILADO
+    4: 'CASES', // ID correspondiente a BOLSEO
+    5: 'BAGS'   // ID correspondiente a POUCH
+  };
+
+  React.useEffect(() => {
+    if (selectedArea) {
+      const uom = areaIdToUOM[selectedArea] || ''; // Usamos el ID del área directamente
+      setSelectedUOM(uom);
+    }
+  }, [selectedArea]);
 
   const handleOpenModal = () => {
     const today = new Date();
@@ -191,7 +198,7 @@ React.useEffect(() => {
       'POUCH': '5',
       'LAMINADO 1': '6'
     };
-  
+
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
     let areaCode = areaMap[selectedAreaName] || '0';
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina);
@@ -200,9 +207,9 @@ React.useEffect(() => {
     const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
     const today = new Date();
     const formattedDate = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(2)}`;
-  
+
     const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
-  
+
     try {
       const response = await axios.get('https://localhost:7204/api/RfidLabel');
       const rfidLabels = response.data;
@@ -210,20 +217,24 @@ React.useEffect(() => {
       const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
       const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
       const consecutivoStr = nextConsecutivo.toString().padStart(2, '0');  // Ajusta a 2 dígitos para el Pallet ID
-  
+
       const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr.padStart(3, '0')}`; // Asegúrate de que la trazabilidad usa 3 dígitos
       const palletId = `${maquinaCode}${formattedDate}${consecutivoStr}`; // Construye el Pallet ID
-  
+
       setTrazabilidad(fullTrazabilidad);
       setRfid(`0000${fullTrazabilidad}`);
       setPalletID(palletId); // Guarda el Pallet ID generado
+
+      // Set the bioFlexLabelId for later use
+      if (response.data.length > 0) {
+        setBioFlexLabelId(response.data[0].id);
+      }
     } catch (error) {
       console.error('Error fetching RfidLabel data:', error);
       setTrazabilidad(`${partialTrazabilidad}001`);
       setRfid(`0000${partialTrazabilidad}001`);
     }
   };
-  
 
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -246,10 +257,22 @@ React.useEffect(() => {
       trazabilidad: trazabilidad,
       orden: orden || '',
       rfid: rfid,
-      status: 0
+      status: 0,
+      postExtraDestinyDto: {
+        bioFlexLabelId: bioFlexLabelId, // Ajusta el ID del label generado
+        shippingUnits: parseInt(shippingUnits),
+        uom: selectedUOM,
+        inventoryLot: inventoryLot,
+        individualUnits: parseInt(qtyUOM),
+        palletId: palletID,
+        customerPo: customerPO,
+        totalUnits: piezas || 0,
+        productDescription: itemDescription,
+        itemNumber: itemNumber
+      }
     };
 
-    axios.post('https://localhost:7204/api/RfidLabel', data)
+    axios.post('https://localhost:7204/api/LabelDestiny', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         handleCloseModal();
@@ -258,6 +281,7 @@ React.useEffect(() => {
         console.error('Error generating etiqueta:', error);
       });
   };
+
   return (
     <div className='impresion-container-destiny'>
       <IconButton
@@ -271,7 +295,7 @@ React.useEffect(() => {
           GENERACION ETIQUETA FORMATO DESTINY
         </Typography>
         <Box className='impresion-form-destiny'>
-        <Select
+          <Select
             value={selectedArea}
             onChange={(e) => setSelectedArea(e.target.value as number)}
             displayEmpty
@@ -342,24 +366,23 @@ React.useEffect(() => {
           <TextField fullWidth label="PESO NETO" variant="outlined" type="number" value={pesoNeto} onChange={e => setPesoNeto(parseFloat(e.target.value))} />
           <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" value={pesoTarima} onChange={e => setPesoTarima(parseFloat(e.target.value))} />
           <TextField
-              fullWidth
-              variant="outlined"
-              type="number"
-              value={piezas || 0} // Se muestra 0 si `piezas` es undefined
-              InputProps={{ readOnly: true }}
+            fullWidth
+            variant="outlined"
+            type="number"
+            value={piezas || 0} // Se muestra 0 si `piezas` es undefined
+            InputProps={{ readOnly: true }}
           />
 
-
-          <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true,}} variant="outlined"/>
+          <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true }} variant="outlined" />
             
-          <TextField fullWidth label="Inventory Lot" variant="outlined" type="number" value={inventoryLot} onChange={(e) => setInventoryLot(e.target.value)} />
+          <TextField fullWidth label="Inventory Lot" variant="outlined" type="number" InputProps={{ readOnly: true }} value={inventoryLot} onChange={(e) => setInventoryLot(e.target.value)} />
           <TextField
-              fullWidth
-              label="Qty/UOM(Eaches)"
-              variant="outlined"
-              type="number"
-              value={qtyUOM}
-              onChange={handleQtyUOMChange}
+            fullWidth
+            label="Qty/UOM(Eaches)"
+            variant="outlined"
+            type="number"
+            value={qtyUOM}
+            onChange={handleQtyUOMChange}
           />
           <TextField
             fullWidth
@@ -370,16 +393,16 @@ React.useEffect(() => {
             InputProps={{ readOnly: true }} // Hace el campo de solo lectura si no requieres que sea editable
           />
           <TextField
-              fullWidth
-              label="Shipping Units/Pallet"
-              variant="outlined"
-              type="number"
-              value={shippingUnits}
-              onChange={handleShippingUnitsChange}
+            fullWidth
+            label="Shipping Units/Pallet"
+            variant="outlined"
+            type="number"
+            value={shippingUnits}
+            onChange={handleShippingUnitsChange}
           />
-          <TextField fullWidth label="Costumer PO" variant="outlined" type="number" value={customerPO} onChange={(e) => setCustomerPO(e.target.value)} />
-          <TextField fullWidth label="Item Description" value={itemDescription} InputProps={{ readOnly: true }} />
-          <TextField fullWidth label="Item#" value={itemNumber} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="Customer PO" variant="outlined" value={customerPO} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="Item Description" variant="outlined" value={itemDescription} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="Item#" variant="outlined" value={itemNumber} InputProps={{ readOnly: true }} />
         </Box>
         <Box className='impresion-button-destiny'>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>

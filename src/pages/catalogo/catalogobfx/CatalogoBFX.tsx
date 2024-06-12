@@ -27,6 +27,7 @@ const columns: GridColDef[] = [
   { field: 'trazabilidad', headerName: 'Trazabilidad', minWidth: 200, maxWidth: 200 },
   { field: 'orden', headerName: 'OT Y/O LOTE', maxWidth: 150 },
   { field: 'rfid', headerName: 'RFID', minWidth: 200, maxWidth: 200 },
+  { field: 'status', headerName: 'STATUS', minWidth: 100, maxWidth: 100 },
 ];
 
 const CatalogoBFX: React.FC = () => {

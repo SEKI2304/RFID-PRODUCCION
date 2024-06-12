@@ -6,6 +6,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
+import { Autocomplete } from '@mui/material';
 
 interface Area {
   id: number;
@@ -193,10 +194,10 @@ const EtiquetadoBFX: React.FC = () => {
       trazabilidad: trazabilidad,
       orden: orden || '',
       rfid: rfid,
-      status: 0
+      status: 1
     };
 
-    axios.post('https://localhost:7204/api/RfidLabel', data)
+    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         handleCloseModal();
@@ -216,39 +217,28 @@ const EtiquetadoBFX: React.FC = () => {
           GENERACION ETIQUETA FORMATO BFX
         </Typography>
         <Box className='impresion-form-bfx'>
-          <Select
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Área</MenuItem>
-            {areas.map(area => (
-              <MenuItem key={area.id} value={area.id}>{area.area}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedOrden}
-            onChange={e => setSelectedOrden(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Orden</MenuItem>
-            {ordenes.map(orden => (
-              <MenuItem key={orden.id} value={orden.id}>{orden.orden}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedMaquina}
-            onChange={e => setSelectedMaquina(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Máquina</MenuItem>
-            {filteredMaquinas.map(maquina => (
-              <MenuItem key={maquina.id} value={maquina.id}>{maquina.maquina}</MenuItem>
-            ))}
-          </Select>
+          <Autocomplete
+            value={areas.find(area => area.id === selectedArea)}
+            onChange={(event, newValue) => setSelectedArea(newValue?.id)}
+            options={areas}
+            getOptionLabel={(option) => option.area}
+            renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
+          />
+
+          <Autocomplete
+            value={ordenes.find(o => o.id === selectedOrden)}
+            onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+            options={ordenes}
+            getOptionLabel={(option) => option.orden}
+            renderInput={(params) => <TextField {...params} label="Orden" />}
+          />
+          <Autocomplete
+              value={filteredMaquinas.find(m => m.id === selectedMaquina)}
+              onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
+              options={filteredMaquinas}
+              getOptionLabel={(option) => option.maquina}
+              renderInput={(params) => <TextField {...params} label="Máquina" />}
+            />
           <TextField
               fullWidth
               label="Producto"
@@ -259,30 +249,21 @@ const EtiquetadoBFX: React.FC = () => {
               variant="outlined"
             />
 
-          <Select
-            value={selectedTurno}
-            onChange={e => setSelectedTurno(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Turno</MenuItem>
-            {turnos.map(turno => (
-              <MenuItem key={turno.id} value={turno.id}>{turno.turno}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedOperador}
-            onChange={(e) => setSelectedOperador(parseInt(e.target.value as string))}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Operador</MenuItem>
-            {operadores.map((operador) => (
-              <MenuItem key={operador.id} value={operador.id}>
-                {operador.numNomina} - {operador.nombreCompleto}
-              </MenuItem>
-            ))}
-          </Select>
+            <Autocomplete
+              value={turnos.find(t => t.id === selectedTurno)}
+              onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
+              options={turnos}
+              getOptionLabel={(option) => option.turno}
+              renderInput={(params) => <TextField {...params} label="Turno" />}
+            />
+
+            <Autocomplete
+              value={operadores.find(o => o.id === selectedOperador)}
+              onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
+              options={operadores}
+              getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
+              renderInput={(params) => <TextField {...params} label="Operador" />}
+            />
           <TextField fullWidth label="PESO BRUTO" variant="outlined" type="number" value={pesoBruto} onChange={e => setPesoBruto(parseFloat(e.target.value))} />
           <TextField fullWidth label="PESO NETO" variant="outlined" type="number" value={pesoNeto} onChange={e => setPesoNeto(parseFloat(e.target.value))} />
           <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" value={pesoTarima} onChange={e => setPesoTarima(parseFloat(e.target.value))} />

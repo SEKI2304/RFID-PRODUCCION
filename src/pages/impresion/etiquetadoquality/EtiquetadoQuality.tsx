@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Button, IconButton, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, TextField, Typography, Autocomplete } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import './etiquetadoquality.scss';
@@ -7,15 +7,12 @@ import './etiquetadoquality.scss';
 // Dummy data para los dropdowns y campos automáticos
 const areaOptions = ['REFILADO', 'BOLSEO', 'IMPRESION', 'POUCH'];
 const ptOptions = ['PT00316', 'PT00789'];
-const uomOptions = ['PCS', 'BOX', 'PLT'];
 const maquinaOptions = ['017 maquina kenworth', '018 maquina ford', '019 maquina toyota'];
 const turnoOptions = ['NEGRO', 'VERDE', 'ROJO', 'AZUL'];
 const operadorOptions = ['1245 - Maria Lopez Becerrar', '1246 - Juan Perez Martinez', '1247 - Ana Gomez Ruiz'];
 
-
 const EtiquetadoQuality: React.FC = () => {
   const navigate = useNavigate();
-    // Estado para manejar la selección de PT y actualizar otros campos automáticamente
   const [selectedPT, setSelectedPT] = React.useState('');
 
   // Simular la obtención de información basada en el PT seleccionado
@@ -35,37 +32,29 @@ const EtiquetadoQuality: React.FC = () => {
           GENERACION ETIQUETA FORMATO QUALITY
         </Typography>
         <Box className='impresion-form-destiny'>
-          <Select fullWidth defaultValue="" displayEmpty>
-            <MenuItem value="" disabled>AREA</MenuItem>
-            {areaOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
+          <Autocomplete
+            options={areaOptions}
+            renderInput={(params) => <TextField {...params} label="AREA" variant="outlined" />}
+          />
           <TextField fullWidth label="OT Y/O LOTE" variant="outlined" type="number" />
-          <Select fullWidth defaultValue="" displayEmpty>
-            <MenuItem value="" disabled>Maquina</MenuItem>
-            {maquinaOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
-          <Select fullWidth value={selectedPT} onChange={(e) => setSelectedPT(e.target.value)} displayEmpty>
-            <MenuItem value="" disabled>PRODUCTO</MenuItem>
-            {ptOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
-          <Select fullWidth defaultValue="" displayEmpty>
-            <MenuItem value="" disabled>Turno</MenuItem>
-            {turnoOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
-          <Select fullWidth defaultValue="" displayEmpty>
-            <MenuItem value="" disabled>Operador</MenuItem>
-            {operadorOptions.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
+          <Autocomplete
+            options={maquinaOptions}
+            renderInput={(params) => <TextField {...params} label="Maquina" variant="outlined" />}
+          />
+          <Autocomplete
+            options={ptOptions}
+            value={selectedPT}
+            onChange={(event, newValue) => setSelectedPT(newValue || '')}
+            renderInput={(params) => <TextField {...params} label="PRODUCTO" variant="outlined" />}
+          />
+          <Autocomplete
+            options={turnoOptions}
+            renderInput={(params) => <TextField {...params} label="Turno" variant="outlined" />}
+          />
+          <Autocomplete
+            options={operadorOptions}
+            renderInput={(params) => <TextField {...params} label="Operador" variant="outlined" />}
+          />
           <TextField fullWidth label="Peso Bruto" variant="outlined" type="number" />
           <TextField fullWidth label="Peso Neto" variant="outlined" type="number" />
           <TextField fullWidth label="Peso Tarima" variant="outlined" type="number" />
