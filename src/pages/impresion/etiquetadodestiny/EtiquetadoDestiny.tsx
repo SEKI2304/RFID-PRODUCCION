@@ -421,7 +421,6 @@ const EtiquetadoDestiny: React.FC = () => {
             value={pesoTarima}
             onChange={handlePesoTarimaChange}
           />
-          <TextField fullWidth label="# Piezas (Rollos, Bultos, Cajas)" variant="outlined" type="number" value={piezas} onChange={e => setPiezas(parseFloat(e.target.value))} />
           <TextField
               label="Número de Tarima"
               value={numeroTarima}
