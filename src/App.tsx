@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css';
+import './App.scss';
 import { Login } from './pages/login/Login';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import NavBar from './components/navbar/NavBar';
@@ -17,6 +17,7 @@ import Operadores from './pages/catalogo/catalogooperador/CatalogoOperador';
 import Turno from './pages/catalogo/catalogoturno/CatalgoTurno';
 import Ordenes from './pages/catalogo/catalogoordenes/CatalogoOrdenes';
 import ProductoQuality from './pages/catalogo/catalogoquality/CatalogoQuality';
+import Footer from './components/footer/Footer';
 
 
 const Entradas = () => <div>Entradas</div>;
@@ -58,6 +59,9 @@ function App() {
             <Route path="/impresionDestiny" element={<EtiquetadoDestiny />} />
             <Route path="/impresionQuality" element={<EtiquetadoQuality />} />
           </Routes>
+        </div>
+        <div className="footer">
+          <Footer/>
         </div>
       </div>
     </Router>

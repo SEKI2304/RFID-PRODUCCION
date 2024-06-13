@@ -1,5 +1,13 @@
-.appbar{
-    .appbar-logo{
-        max-height: 25px;
+.appbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;     // Asegura que se mantenga sobre otros elementos
+    background-color: #FFF; // Asegura que el fondo no sea transparente
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); // Opcional, añade sombra para mejor visibilidad
+
+    .appbar-logo {
+        max-height: 25px; // Ajusta la altura del logo si es necesario
     }
 }

@@ -104,6 +104,8 @@ const CatalogoBFX: React.FC = () => {
         disableColumnFilter
         disableColumnSelector
         disableDensitySelector
+        slots={{ toolbar: GridToolbar }}
+        slotProps={{ toolbar: { showQuickFilter: true } }}
         rows={rows}
         initialState={{
             pagination: {
@@ -112,9 +114,8 @@ const CatalogoBFX: React.FC = () => {
               },
             },
         }}
-        pageSizeOptions={[10]}
+        pageSizeOptions={[5,10,25]}
         pagination
-        slots={{ toolbar: GridToolbar }}
       />
       <Modal open={openModal} onClose={handleCloseModal}>
         <Paper className="bfx-modal-content">

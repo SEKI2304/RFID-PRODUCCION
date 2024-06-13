@@ -130,7 +130,18 @@ const EtiquetadoDestiny: React.FC = () => {
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Assuming you want to keep the date in 'yyyy-MM-dd' format in the state
     setDate(event.target.value);
+    const newDate = event.target.value;
+    generatePalletID(newDate);
   };
+
+  const formatDateForPalletID = (isoDate: string): string => {
+  const date = new Date(isoDate);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Ajusta el mes
+  const year = date.getFullYear().toString().slice(2); // Los últimos dos dígitos
+  return `${day}${month}${year}`;
+};
+
 
   useEffect(() => {
     axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
@@ -209,6 +220,14 @@ const EtiquetadoDestiny: React.FC = () => {
     }
   }, [selectedArea]);
 
+  useEffect(() => {
+  if (date && numeroTarima && selectedMaquina) {
+    generatePalletID(date);  // Asegúrate de que esta función use `date` actualizada
+  }
+}, [date, numeroTarima, selectedMaquina]); // Asegúrate de que estas dependencias estén definidas correctamente
+
+
+
   const handleOpenModal = () => {
    //const today = new Date();
    //const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
@@ -222,6 +241,18 @@ const EtiquetadoDestiny: React.FC = () => {
   const handleGenerateEtiqueta = () => {
     handleOpenModal();
   };
+  const generatePalletID = (newDate: string) => {
+    if (newDate && numeroTarima && selectedMaquina) {
+      const formattedDate = formatDateForPalletID(newDate);
+      const formattedNumeroTarima = numeroTarima.padStart(3, '0');
+      const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
+      const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
+      const newPalletID = `${maquinaCode}${formattedDate}${formattedNumeroTarima}`;
+      setPalletID(newPalletID);
+    }
+  };
+  
+
 
   const generateTrazabilidad = async () => {
     const base = '2';
@@ -239,10 +270,10 @@ const EtiquetadoDestiny: React.FC = () => {
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
     let areaCode = areaMap[selectedAreaName] || '0';
-    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina);
-    const maquinaCode = maquina ? maquina.no.padStart(2, '0') : '00';
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
+    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
+    const ordenCode = ordenNo ? ordenNo.toString().padStart(5, '0') : '00000';
     //const today = new Date();
     //const formattedDate = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(2)}`;
     const formattedNumeroTarima = numeroTarima.padStart(3, '0');
@@ -250,7 +281,7 @@ const EtiquetadoDestiny: React.FC = () => {
     const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
     setTrazabilidad(fullTrazabilidad);
     setRfid(`0000${fullTrazabilidad}`);
-
+ // Guarda el Pallet ID generado
     {/*const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
     try {
@@ -340,7 +371,7 @@ const EtiquetadoDestiny: React.FC = () => {
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO DESTINY
         </Typography>
-        <Box className='impresion-form-destiny'>
+        <Box className='impresion-form-destiny' >
         <TextField
         type="date"
         value={date}
@@ -496,7 +527,7 @@ const EtiquetadoDestiny: React.FC = () => {
             <Box className="modal-row">
               <Typography><strong>INVENTORY LOT:</strong> {inventoryLot}</Typography>
               <Typography><strong>QTY/UOM (EACHES):</strong> {qtyUOM}</Typography>
-            </Box>
+          </Box>
             <Box className="modal-row">
               <Typography><strong>PALLET ID:</strong> {palletID}</Typography>
               <Typography><strong>TOTAL QTY/PALLET (EACHES):</strong> {piezas}</Typography>
