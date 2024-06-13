@@ -5,6 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
 import './etiquetadodestiny.scss';
+import { Autocomplete } from '@mui/material';
 
 interface Area {
   id: number;
@@ -63,7 +64,7 @@ const EtiquetadoDestiny: React.FC = () => {
   const [piezas, setPiezas] = useState<number | undefined>();
   const [selectedOperador, setSelectedOperador] = useState<number | undefined>();
   const [openModal, setOpenModal] = useState(false);
-  const [currentDate, setCurrentDate] = useState<string>('');
+  //const [currentDate, setCurrentDate] = useState<string>('');
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
   const [selectedUOM, setSelectedUOM] = React.useState('');
@@ -75,6 +76,8 @@ const EtiquetadoDestiny: React.FC = () => {
   const [itemDescription, setItemDescription] = React.useState<string>("");
   const [itemNumber, setItemNumber] = React.useState<string>("");
   const [bioFlexLabelId, setBioFlexLabelId] = useState<number | null>(null);
+  const [numeroTarima, setNumeroTarima] = useState('');
+  const [date, setDate] = useState('');
 
   const calculatePieces = () => {
     const qtyNumber = parseFloat(qtyUOM) || 0;
@@ -90,6 +93,43 @@ const EtiquetadoDestiny: React.FC = () => {
   const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setShippingUnits(event.target.value);
     calculatePieces();
+  };
+  const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const newPesoBruto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso bruto no sea menor que el peso neto existente.
+    if (!isNaN(newPesoBruto) && (pesoNeto === undefined || newPesoBruto >= pesoNeto)) {
+      setPesoBruto(newPesoBruto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso bruto no puede ser menor que el peso neto.');
+    }
+  };
+
+  const handlePesoNetoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newPesoNeto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso neto no sea mayor que el peso bruto existente.
+    if (!isNaN(newPesoNeto) && (pesoBruto === undefined || newPesoNeto <= pesoBruto)) {
+      setPesoNeto(newPesoNeto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso neto no puede ser mayor que el peso bruto.');
+    }
+  };
+
+  const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value <= 30) {
+      setPesoTarima(value);
+    } else {
+      console.error('El valor no puede ser mayor que 30.');
+      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.min(value, 30));
+    }
+  };
+
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Assuming you want to keep the date in 'yyyy-MM-dd' format in the state
+    setDate(event.target.value);
   };
 
   useEffect(() => {
@@ -123,31 +163,26 @@ const EtiquetadoDestiny: React.FC = () => {
   }, [selectedArea, areas]);
 
   useEffect(() => {
-    if (selectedArea && selectedTurno) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}&IdTurno=${selectedTurno}`)
+    if (selectedArea) {
+      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
         .catch(error => console.error('Error fetching data:', error));
     }
-  }, [selectedArea, selectedTurno]);
+  }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedArea && selectedOrden) {
-      axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
-        const orden = response.data.find(orden => orden.id === selectedOrden);
-        if (orden) {
-          const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado); // Correcto para una cadena simple
-
-          // Set the related fields from the order
-          setCustomerPO(orden.customerPO || "");
-          setItemDescription(orden.itemDescription || "");
-          setItemNumber(orden.itemNumber || "");
-        }
-      });
-    }
-  }, [selectedArea, selectedOrden]);
+  if (selectedArea && selectedOrden) {
+    axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+      const orden = response.data.find(orden => orden.id === selectedOrden);
+      if (orden) {
+        const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
+        setFilteredProductos(productoConcatenado); // Correcto para una cadena simple
+      }
+    });
+  }
+}, [selectedArea, selectedOrden]);
 
   useEffect(() => {
     if (qtyUOM && shippingUnits) {
@@ -164,7 +199,7 @@ const EtiquetadoDestiny: React.FC = () => {
   const areaIdToUOM: UOMMap = {
     3: 'ROLLS', // ID correspondiente a REFILADO
     4: 'CASES', // ID correspondiente a BOLSEO
-    5: 'BAGS'   // ID correspondiente a POUCH
+    6: 'BAGS'   // ID correspondiente a POUCH
   };
 
   React.useEffect(() => {
@@ -175,9 +210,9 @@ const EtiquetadoDestiny: React.FC = () => {
   }, [selectedArea]);
 
   const handleOpenModal = () => {
-    const today = new Date();
-    const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
-    setCurrentDate(formattedDate);
+   //const today = new Date();
+   //const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+   //setCurrentDate(formattedDate);
     generateTrazabilidad(); // Generar trazabilidad y RFID antes de abrir el modal
     setOpenModal(true);
   };
@@ -195,8 +230,11 @@ const EtiquetadoDestiny: React.FC = () => {
       'IMPRESIÓN': '2',
       'REFILADO': '3',
       'BOLSEO': '4',
-      'POUCH': '5',
-      'LAMINADO 1': '6'
+      'VASO': '5',
+      'POUCH': '6',
+      'LAMINADO 1': '7',
+      'CINTA': '8',
+      'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
@@ -205,10 +243,15 @@ const EtiquetadoDestiny: React.FC = () => {
     const maquinaCode = maquina ? maquina.no.padStart(2, '0') : '00';
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
     const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
-    const today = new Date();
-    const formattedDate = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(2)}`;
+    //const today = new Date();
+    //const formattedDate = `${today.getDate().toString().padStart(2, '0')}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getFullYear().toString().slice(2)}`;
+    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
 
-    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
+    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
+    setTrazabilidad(fullTrazabilidad);
+    setRfid(`0000${fullTrazabilidad}`);
+
+    {/*const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
     try {
       const response = await axios.get('https://localhost:7204/api/RfidLabel');
@@ -233,7 +276,7 @@ const EtiquetadoDestiny: React.FC = () => {
       console.error('Error fetching RfidLabel data:', error);
       setTrazabilidad(`${partialTrazabilidad}001`);
       setRfid(`0000${partialTrazabilidad}001`);
-    }
+    }*/}
   };
 
   const handleConfirmEtiqueta = () => {
@@ -243,6 +286,7 @@ const EtiquetadoDestiny: React.FC = () => {
     const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
+    
     const data = {
       area: area || '',
       claveProducto: producto.split(' ')[0],
@@ -257,11 +301,13 @@ const EtiquetadoDestiny: React.FC = () => {
       trazabilidad: trazabilidad,
       orden: orden || '',
       rfid: rfid,
-      status: 0,
+      status: 1,
+      uom: selectedUOM,
+      fecha: date,
       postExtraDestinyDto: {
         bioFlexLabelId: bioFlexLabelId, // Ajusta el ID del label generado
         shippingUnits: parseInt(shippingUnits),
-        uom: selectedUOM,
+        
         inventoryLot: inventoryLot,
         individualUnits: parseInt(qtyUOM),
         palletId: palletID,
@@ -295,76 +341,98 @@ const EtiquetadoDestiny: React.FC = () => {
           GENERACION ETIQUETA FORMATO DESTINY
         </Typography>
         <Box className='impresion-form-destiny'>
-          <Select
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Área</MenuItem>
-            {areas.map(area => (
-              <MenuItem key={area.id} value={area.id}>{area.area}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedOrden}
-            onChange={e => setSelectedOrden(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Orden</MenuItem>
-            {ordenes.map(orden => (
-              <MenuItem key={orden.id} value={orden.id}>{orden.orden}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedMaquina}
-            onChange={e => setSelectedMaquina(e.target.value as number)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="" disabled>Máquina</MenuItem>
-            {filteredMaquinas.map(maquina => (
-              <MenuItem key={maquina.id} value={maquina.id}>{maquina.maquina}</MenuItem>
-            ))}
-          </Select>
-          <TextField
-            fullWidth
-            label="Producto"
-            value={filteredProductos} // Ahora es una string directa, no un array
-            InputProps={{
-              readOnly: true,
-            }}
-            variant="outlined"
+        <TextField
+        type="date"
+        value={date}
+        onChange={handleDateChange}
+        InputLabelProps={{
+          shrink: true,
+        }}
+         />
+          <Autocomplete
+            value={areas.find(area => area.id === selectedArea)}
+            onChange={(event, newValue) => setSelectedArea(newValue?.id)}
+            options={areas}
+            getOptionLabel={(option) => option.area}
+            renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
 
-          <Select
-            value={selectedTurno}
-            onChange={e => setSelectedTurno(e.target.value as number)}
-            displayEmpty
+          <Autocomplete
+            value={ordenes.find(o => o.id === selectedOrden)}
+            onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+            options={ordenes}
+            getOptionLabel={(option) => option.orden.toString()}
+            renderInput={(params) => <TextField {...params} label="Orden" />}
+          />
+          <Autocomplete
+              value={filteredMaquinas.find(m => m.id === selectedMaquina)}
+              onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
+              options={filteredMaquinas}
+              getOptionLabel={(option) => option.maquina}
+              renderInput={(params) => <TextField {...params} label="Máquina" />}
+            />
+          <TextField
+              fullWidth
+              label="Producto"
+              value={filteredProductos} // Ahora es una string directa, no un array
+              InputProps={{
+                readOnly: true,
+              }}
+              variant="outlined"
+            />
+
+            <Autocomplete
+              value={turnos.find(t => t.id === selectedTurno)}
+              onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
+              options={turnos}
+              getOptionLabel={(option) => option.turno}
+              renderInput={(params) => <TextField {...params} label="Turno" />}
+            />
+
+            <Autocomplete
+              value={operadores.find(o => o.id === selectedOperador)}
+              onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
+              options={operadores}
+              getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
+              renderInput={(params) => <TextField {...params} label="Operador" />}
+            />
+          <TextField
             fullWidth
-          >
-            <MenuItem value="" disabled>Turno</MenuItem>
-            {turnos.map(turno => (
-              <MenuItem key={turno.id} value={turno.id}>{turno.turno}</MenuItem>
-            ))}
-          </Select>
-          <Select
-            value={selectedOperador}
-            onChange={(e) => setSelectedOperador(parseInt(e.target.value as string))}
-            displayEmpty
+            label="PESO BRUTO"
+            variant="outlined"
+            type="number"
+            value={pesoBruto}
+            onChange={handlePesoBrutoChange} // Usar el nuevo método aquí
+          />
+
+          <TextField
             fullWidth
-          >
-            <MenuItem value="" disabled>Operador</MenuItem>
-            {operadores.map((operador) => (
-              <MenuItem key={operador.id} value={operador.id}>
-                {operador.numNomina} - {operador.nombreCompleto}
-              </MenuItem>
-            ))}
-          </Select>
-          <TextField fullWidth label="PESO BRUTO" variant="outlined" type="number" value={pesoBruto} onChange={e => setPesoBruto(parseFloat(e.target.value))} />
-          <TextField fullWidth label="PESO NETO" variant="outlined" type="number" value={pesoNeto} onChange={e => setPesoNeto(parseFloat(e.target.value))} />
-          <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" value={pesoTarima} onChange={e => setPesoTarima(parseFloat(e.target.value))} />
+            label="PESO NETO"
+            variant="outlined"
+            type="number"
+            value={pesoNeto}
+            onChange={handlePesoNetoChange} // Usar el nuevo método aquí
+          />
+          <TextField
+            fullWidth
+            label="PESO TARIMA"
+            variant="outlined"
+            type="number"
+            value={pesoTarima}
+            onChange={handlePesoTarimaChange}
+          />
+          <TextField fullWidth label="# Piezas (Rollos, Bultos, Cajas)" variant="outlined" type="number" value={piezas} onChange={e => setPiezas(parseFloat(e.target.value))} />
+          <TextField
+              label="Número de Tarima"
+              value={numeroTarima}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Acepta solo números y limita a 3 caracteres.
+                if (/^\d{0,3}$/.test(value)) {
+                  setNumeroTarima(value);
+                }
+              }}
+          />
           <TextField
             fullWidth
             variant="outlined"

@@ -38,10 +38,13 @@ interface Operador {
 
 interface Orden {
   id: number;
-  orden: number;
+  orden: string;
   claveProducto: string;
   producto: string;
   areaId: number;
+  customerPO?: string;
+  itemDescription?: string;
+  itemNumber?: string;
 }
 
 const EtiquetadoBFX: React.FC = () => {
