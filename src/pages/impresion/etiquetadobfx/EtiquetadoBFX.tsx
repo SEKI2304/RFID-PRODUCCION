@@ -38,7 +38,7 @@ interface Operador {
 
 interface Orden {
   id: number;
-  orden: string;
+  orden: number;
   claveProducto: string;
   producto: string;
   areaId: number;
@@ -62,10 +62,50 @@ const EtiquetadoBFX: React.FC = () => {
   const [piezas, setPiezas] = useState<number | undefined>();
   const [selectedOperador, setSelectedOperador] = useState<number | undefined>();
   const [openModal, setOpenModal] = useState(false);
-  const [currentDate, setCurrentDate] = useState<string>('');
+  /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
+  const [numeroTarima, setNumeroTarima] = useState('');
+  const [unidad, setUnidad] = useState('Piezas');
+  const [date, setDate] = useState('');
   
+  const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const newPesoBruto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso bruto no sea menor que el peso neto existente.
+    if (!isNaN(newPesoBruto) && (pesoNeto === undefined || newPesoBruto >= pesoNeto)) {
+      setPesoBruto(newPesoBruto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso bruto no puede ser menor que el peso neto.');
+    }
+  };
+
+  const handlePesoNetoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newPesoNeto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso neto no sea mayor que el peso bruto existente.
+    if (!isNaN(newPesoNeto) && (pesoBruto === undefined || newPesoNeto <= pesoBruto)) {
+      setPesoNeto(newPesoNeto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso neto no puede ser mayor que el peso bruto.');
+    }
+  };
+
+  const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value <= 30) {
+      setPesoTarima(value);
+    } else {
+      console.error('El valor no puede ser mayor que 30.');
+      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.min(value, 30));
+    }
+  };
+
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Assuming you want to keep the date in 'yyyy-MM-dd' format in the state
+    setDate(event.target.value);
+  };
 
   useEffect(() => {
     axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
@@ -98,14 +138,14 @@ const EtiquetadoBFX: React.FC = () => {
   }, [selectedArea, areas]);
 
   useEffect(() => {
-    if (selectedArea && selectedTurno) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}&IdTurno=${selectedTurno}`)
+    if (selectedArea) {
+      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
         .catch(error => console.error('Error fetching data:', error));
     }
-  }, [selectedArea, selectedTurno]);
+  }, [selectedArea]);
 
   useEffect(() => {
   if (selectedArea && selectedOrden) {
@@ -121,9 +161,9 @@ const EtiquetadoBFX: React.FC = () => {
   
 
   const handleOpenModal = () => {
-    const today = new Date();
+    {/*const today = new Date();
     const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
-    setCurrentDate(formattedDate);
+    setCurrentDate(formattedDate);*/}
     generateTrazabilidad(); // Generar trazabilidad y RFID antes de abrir el modal
     setOpenModal(true);
   };
@@ -141,8 +181,11 @@ const EtiquetadoBFX: React.FC = () => {
       'IMPRESIÓN': '2',
       'REFILADO': '3',
       'BOLSEO': '4',
-      'POUCH': '5',
-      'LAMINADO 1': '6'
+      'VASO': '5',
+      'POUCH': '6',
+      'LAMINADO 1': '7',
+      'CINTA': '8',
+      'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
@@ -150,36 +193,43 @@ const EtiquetadoBFX: React.FC = () => {
     const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
     const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.padStart(5, '0') : '00000';
+    const ordenCode = ordenNo ? ordenNo.toString().padStart(5, '0') : '00000';
 
-    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
+    // Rellenando el número de tarima a tres dígitos
+    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
 
-    try {
-      const response = await axios.get('https://localhost:7204/api/RfidLabel');
-      const rfidLabels = response.data;
+    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
+    setTrazabilidad(fullTrazabilidad);
+    setRfid(`0000${fullTrazabilidad}`);
 
-      const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
-      const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
-      const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
-      const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
+    // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
+      {/*  try {
+        const response = await axios.get('https://localhost:7204/api/RfidLabel');
+        const rfidLabels = response.data;
 
-      const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
-      setTrazabilidad(fullTrazabilidad);
-      setRfid(`0000${fullTrazabilidad}`);
-    } catch (error) {
-      console.error('Error fetching RfidLabel data:', error);
-      setTrazabilidad(`${partialTrazabilidad}001`);
-      setRfid(`0000${partialTrazabilidad}001`);
-    }
+        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
+        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
+        const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
+        const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
+
+        const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
+        setTrazabilidad(fullTrazabilidad);
+        setRfid(`0000${fullTrazabilidad}`);
+      } catch (error) {
+        console.error('Error fetching RfidLabel data:', error);
+        setTrazabilidad(`${partialTrazabilidad}001`);
+        setRfid(`0000${partialTrazabilidad}001`);
+      }*/}
   };
 
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
-    const orden = ordenes.find(o => o.id === selectedOrden)?.orden;
+    const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
     const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
+
     const data = {
       area: area || '',
       claveProducto: producto.split(' ')[0],
@@ -192,9 +242,11 @@ const EtiquetadoBFX: React.FC = () => {
       pesoNeto: pesoNeto || 0,
       piezas: piezas || 0,
       trazabilidad: trazabilidad,
-      orden: orden || '',
+      orden: orden || "",
       rfid: rfid,
-      status: 1
+      status: 1,
+      uom: unidad,
+      fecha: date
     };
 
     axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
@@ -205,7 +257,8 @@ const EtiquetadoBFX: React.FC = () => {
       .catch(error => {
         console.error('Error generating etiqueta:', error);
       });
-  };
+};
+
 
   return (
     <div className='impresion-container-bfx'>
@@ -217,6 +270,14 @@ const EtiquetadoBFX: React.FC = () => {
           GENERACION ETIQUETA FORMATO BFX
         </Typography>
         <Box className='impresion-form-bfx'>
+        <TextField
+        type="date"
+        value={date}
+        onChange={handleDateChange}
+        InputLabelProps={{
+          shrink: true,
+        }}
+         />
           <Autocomplete
             value={areas.find(area => area.id === selectedArea)}
             onChange={(event, newValue) => setSelectedArea(newValue?.id)}
@@ -229,7 +290,7 @@ const EtiquetadoBFX: React.FC = () => {
             value={ordenes.find(o => o.id === selectedOrden)}
             onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
             options={ordenes}
-            getOptionLabel={(option) => option.orden}
+            getOptionLabel={(option) => option.orden.toString()}
             renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
@@ -264,10 +325,55 @@ const EtiquetadoBFX: React.FC = () => {
               getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
               renderInput={(params) => <TextField {...params} label="Operador" />}
             />
-          <TextField fullWidth label="PESO BRUTO" variant="outlined" type="number" value={pesoBruto} onChange={e => setPesoBruto(parseFloat(e.target.value))} />
-          <TextField fullWidth label="PESO NETO" variant="outlined" type="number" value={pesoNeto} onChange={e => setPesoNeto(parseFloat(e.target.value))} />
-          <TextField fullWidth label="PESO TARIMA" variant="outlined" type="number" value={pesoTarima} onChange={e => setPesoTarima(parseFloat(e.target.value))} />
+          <TextField
+            fullWidth
+            label="PESO BRUTO"
+            variant="outlined"
+            type="number"
+            value={pesoBruto}
+            onChange={handlePesoBrutoChange} // Usar el nuevo método aquí
+          />
+
+          <TextField
+            fullWidth
+            label="PESO NETO"
+            variant="outlined"
+            type="number"
+            value={pesoNeto}
+            onChange={handlePesoNetoChange} // Usar el nuevo método aquí
+          />
+          <TextField
+            fullWidth
+            label="PESO TARIMA"
+            variant="outlined"
+            type="number"
+            value={pesoTarima}
+            onChange={handlePesoTarimaChange}
+          />
           <TextField fullWidth label="# Piezas (Rollos, Bultos, Cajas)" variant="outlined" type="number" value={piezas} onChange={e => setPiezas(parseFloat(e.target.value))} />
+          <TextField
+              label="Número de Tarima"
+              value={numeroTarima}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Acepta solo números y limita a 3 caracteres.
+                if (/^\d{0,3}$/.test(value)) {
+                  setNumeroTarima(value);
+                }
+              }}
+          />
+          <Select
+            label="Unidad"
+            value={unidad}
+            onChange={(e) => setUnidad(e.target.value)}
+            displayEmpty
+            fullWidth
+          >
+            <MenuItem value="Piezas">Piezas</MenuItem>
+            <MenuItem value="Bultos">Bultos</MenuItem>
+            <MenuItem value="Millares">Millares</MenuItem>
+            <MenuItem value="Cajas">Cajas</MenuItem>
+          </Select>
         </Box>
         <Box className='impresion-button-bfx'>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
@@ -294,7 +400,9 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>Área:</strong> {areas.find(a => a.id === selectedArea)?.area}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Fecha:</strong> {currentDate}</Typography>
+            <Typography>
+              <strong>Fecha:</strong> {date}
+            </Typography>
             </div>
             <div className="row">
             <Typography><strong>Producto:</strong> {filteredProductos}</Typography>
@@ -322,7 +430,7 @@ const EtiquetadoBFX: React.FC = () => {
               <Typography><strong>Peso Tarima:</strong> {pesoTarima}</Typography>
             </div>
             <div className="row">
-              <Typography><strong># Piezas (Rollos, Bultos, Cajas):</strong> {piezas}</Typography>
+              <Typography><strong>{unidad}:</strong> {piezas}</Typography>
             </div>
             <div className="row">
               <Typography><strong>Codigo de Trazabilidad:</strong> {trazabilidad}</Typography>
