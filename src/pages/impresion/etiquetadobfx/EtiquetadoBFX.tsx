@@ -303,7 +303,7 @@ const EtiquetadoBFX: React.FC = () => {
               getOptionLabel={(option) => option.maquina}
               renderInput={(params) => <TextField {...params} label="Máquina" />}
             />
-          <Select
+          <TextField
               fullWidth
               label="Producto"
               value={filteredProductos} // Ahora es una string directa, no un array
