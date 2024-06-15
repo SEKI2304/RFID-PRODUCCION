@@ -121,7 +121,7 @@ const EtiquetadoBFX: React.FC = () => {
 
   useEffect(() => {
     if (selectedArea) {
-      const areaName = areas.find(a => a.id === selectedArea)?.area;
+      const areaName = areas.find(a => a.id === selectedArea)?.area ;
       axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
@@ -196,14 +196,14 @@ const EtiquetadoBFX: React.FC = () => {
     const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
     const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.toString().padStart(5, '0') : '00000';
+    const ordenCode = ordenNo ? ordenNo.toString().padStart(6, '0') : '000000';
 
     // Rellenando el número de tarima a tres dígitos
     const formattedNumeroTarima = numeroTarima.padStart(3, '0');
 
     const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
     setTrazabilidad(fullTrazabilidad);
-    setRfid(`0000${fullTrazabilidad}`);
+    setRfid(`000${fullTrazabilidad}`);
 
     // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
       {/*  try {
@@ -293,7 +293,7 @@ const EtiquetadoBFX: React.FC = () => {
             value={ordenes.find(o => o.id === selectedOrden)}
             onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
             options={ordenes}
-            getOptionLabel={(option) => option.orden.toString()}
+            getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + option.producto}
             renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
@@ -307,6 +307,9 @@ const EtiquetadoBFX: React.FC = () => {
               fullWidth
               label="Producto"
               value={filteredProductos} // Ahora es una string directa, no un array
+              InputProps={{
+                readOnly: true,
+              }}
               variant="outlined"
             />
 

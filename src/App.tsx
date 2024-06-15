@@ -18,6 +18,7 @@ import Turno from './pages/catalogo/catalogoturno/CatalgoTurno';
 import Ordenes from './pages/catalogo/catalogoordenes/CatalogoOrdenes';
 import ProductoQuality from './pages/catalogo/catalogoquality/CatalogoQuality';
 import Footer from './components/footer/Footer';
+import EtiquetadoVaso from './pages/impresion/etiquetadoVaso/EtiquetadoVaso';
 
 
 const Entradas = () => <div>Entradas</div>;
@@ -58,6 +59,7 @@ function App() {
             <Route path="/impresionBFX" element={<EtiquetadoBFX />} />
             <Route path="/impresionDestiny" element={<EtiquetadoDestiny />} />
             <Route path="/impresionQuality" element={<EtiquetadoQuality />} />
+            <Route path="/impresionVaso" element={<EtiquetadoVaso />} />
           </Routes>
         </div>
         <div className="footer">
