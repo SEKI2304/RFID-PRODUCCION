@@ -7,6 +7,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete } from '@mui/material';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Area {
   id: number;
@@ -46,6 +48,15 @@ interface Orden {
   itemDescription?: string;
   itemNumber?: string;
 }
+interface EtiquetaData {
+  claveProducto: string;
+  nombreProducto: string;
+  pesoBruto: number;
+  pesoNeto: number;
+  orden: string;
+  fecha: string;
+}
+
 
 const EtiquetadoBFX: React.FC = () => {
   const navigate = useNavigate();
@@ -243,7 +254,50 @@ const EtiquetadoBFX: React.FC = () => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
+  const generatePDF = (data: EtiquetaData) => {
+    const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'letter'  // Puedes ajustar el tamaño de página según necesites
+    });
+  
+    // Función para dividir y ajustar texto largo en varias líneas
+    const splitText = (text: string, x: number, y: number, fontSize: number, maxWidth: number): number => {
+      doc.setFontSize(fontSize);
+      const lines: string[] = doc.splitTextToSize(text, maxWidth); // Divide el texto para que se ajuste al ancho máximo
+      lines.forEach((line: string) => {  // Aquí se especifica el tipo de 'line' como 'string'
+        doc.text(line, x, y);
+        y += fontSize * 0.4; // Aumentar 'y' para la siguiente línea basada en el tamaño de la fuente
+      });
+      return y; // Retorna la nueva posición 'y' después de las líneas
+    };
+  
+    doc.setFontSize(150);
+    doc.text(`${claveProducto}`, 25, 45);
+  
+    let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
+    currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
+  
+    doc.setFontSize(50);
+    doc.text(`${pesoNeto} KGM`, 20, 165);
+    doc.text(`LOTE:${orden}`, 155, 165);
+    
+    doc.setFontSize(70);
+    doc.text(`${fecha}`, 60, 200);
+  
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(5, 55, 275, 55);
+    doc.line(5, 145, 275, 145);
+    doc.line(5, 175, 275, 175);
+  
+    window.open(doc.output('bloburl'), '_blank');
+  };
+
+
+
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
@@ -271,11 +325,12 @@ const EtiquetadoBFX: React.FC = () => {
       fecha: date
     };
   
-    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
+    axios.post('https://localhost:7204/api/RfidLabel', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
         handleCloseModal(); // Cierra el modal después de confirmar
+        generatePDF(data); // Llama a generatePDF aquí después de la respuesta exitosa 
       })
       .catch(error => {
         console.error('Error generating etiqueta:', error);
