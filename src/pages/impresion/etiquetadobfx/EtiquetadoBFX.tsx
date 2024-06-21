@@ -71,6 +71,7 @@ const EtiquetadoBFX: React.FC = () => {
   const [numeroTarima, setNumeroTarima] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
+  const [resetKey, setResetKey] = useState(0);
   
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const newPesoBruto = parseFloat(event.target.value);
@@ -225,14 +226,32 @@ const EtiquetadoBFX: React.FC = () => {
       }*/}
   };
 
+  const resetForm = () => {
+    setSelectedArea(undefined);
+    setSelectedOrden(undefined);
+    setSelectedMaquina(undefined);
+    setSelectedTurno(undefined);
+    setSelectedOperador(undefined);
+    setPesoBruto(undefined);
+    setPesoNeto(undefined);
+    setPesoTarima(undefined);
+    setPiezas(undefined);
+    setNumeroTarima('');
+    setUnidad('Piezas');
+    setDate('');
+
+    setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
+  };
+
+  
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
+    const producto = filteredProductos;
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
-
+  
     const data = {
       area: area || '',
       claveProducto: producto.split(' ')[0],
@@ -251,16 +270,20 @@ const EtiquetadoBFX: React.FC = () => {
       uom: unidad,
       fecha: date
     };
-
+  
     axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
-        handleCloseModal();
+        resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
+        handleCloseModal(); // Cierra el modal después de confirmar
       })
       .catch(error => {
         console.error('Error generating etiqueta:', error);
       });
-};
+  };
+  
+
+
 
 
   return (
@@ -279,81 +302,97 @@ const EtiquetadoBFX: React.FC = () => {
         onChange={handleDateChange}
         InputLabelProps={{
           shrink: true,
-        }}
-         />
+        }}/>
           <Autocomplete
-            value={areas.find(area => area.id === selectedArea)}
-            onChange={(event, newValue) => setSelectedArea(newValue?.id)}
-            options={areas}
-            getOptionLabel={(option) => option.area}
-            renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
-          />
-
-          <Autocomplete
-            value={ordenes.find(o => o.id === selectedOrden)}
-            onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-            options={ordenes}
-            getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + option.producto}
-            renderInput={(params) => <TextField {...params} label="Orden" />}
+              key={`area-${resetKey}`}
+              value={areas.find(area => area.id === selectedArea)}
+              onChange={(event, newValue) => setSelectedArea(newValue?.id)}
+              options={areas}
+              getOptionLabel={(option) => option.area}
+              renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
           <Autocomplete
+              key={`orden-${resetKey}`}
+              value={ordenes.find(o => o.id === selectedOrden)}
+              onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+              options={ordenes}
+              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + option.producto}
+              renderInput={(params) => <TextField {...params} label="Orden" />}
+          />
+          <Autocomplete
+              key={`maquina-${resetKey}`}
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}
               onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
               options={filteredMaquinas}
               getOptionLabel={(option) => option.maquina}
               renderInput={(params) => <TextField {...params} label="Máquina" />}
-            />
+          />
           <TextField
+              key={`producto-${resetKey}`}
               fullWidth
               label="Producto"
-              value={filteredProductos} // Ahora es una string directa, no un array
+              value={filteredProductos}
               InputProps={{
                 readOnly: true,
               }}
               variant="outlined"
+          />
+            <Autocomplete
+                key={`turno-${resetKey}`}
+                value={turnos.find(t => t.id === selectedTurno)}
+                onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
+                options={turnos}
+                getOptionLabel={(option) => option.turno}
+                renderInput={(params) => <TextField {...params} label="Turno" />}
             />
 
             <Autocomplete
-              value={turnos.find(t => t.id === selectedTurno)}
-              onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
-              options={turnos}
-              getOptionLabel={(option) => option.turno}
-              renderInput={(params) => <TextField {...params} label="Turno" />}
-            />
-
-            <Autocomplete
-              value={operadores.find(o => o.id === selectedOperador)}
-              onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
-              options={operadores}
-              getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
-              renderInput={(params) => <TextField {...params} label="Operador" />}
+                key={`operador-${resetKey}`}
+                value={operadores.find(o => o.id === selectedOperador)}
+                onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
+                options={operadores}
+                getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
+                renderInput={(params) => <TextField {...params} label="Operador" />}
             />
           <TextField
-            fullWidth
-            label="PESO BRUTO"
-            variant="outlined"
-            type="number"
-            value={pesoBruto}
-            onChange={handlePesoBrutoChange} // Usar el nuevo método aquí
+              key={`peso-bruto-${resetKey}`}
+              fullWidth
+              label="PESO BRUTO"
+              variant="outlined"
+              type="number"
+              value={pesoBruto}
+              onChange={handlePesoBrutoChange}
           />
 
           <TextField
-            fullWidth
-            label="PESO NETO"
-            variant="outlined"
-            type="number"
-            value={pesoNeto}
-            onChange={handlePesoNetoChange} // Usar el nuevo método aquí
+              key={`peso-neto-${resetKey}`}
+              fullWidth
+              label="PESO NETO"
+              variant="outlined"
+              type="number"
+              value={pesoNeto}
+              onChange={handlePesoNetoChange}
           />
+
           <TextField
-            fullWidth
-            label="PESO TARIMA"
-            variant="outlined"
-            type="number"
-            value={pesoTarima}
-            onChange={handlePesoTarimaChange}
+              key={`peso-tarima-${resetKey}`}
+              fullWidth
+              label="PESO TARIMA"
+              variant="outlined"
+              type="number"
+              value={pesoTarima}
+              onChange={handlePesoTarimaChange}
           />
-          <TextField fullWidth label="# Piezas (Rollos, Bultos, Cajas)" variant="outlined" type="number" value={piezas} onChange={e => setPiezas(parseFloat(e.target.value))} />
+
+          <TextField
+              key={`piezas-${resetKey}`}
+              fullWidth
+              label="# Piezas (Rollos, Bultos, Cajas)"
+              variant="outlined"
+              type="number"
+              value={piezas}
+              onChange={e => setPiezas(parseFloat(e.target.value))}
+          />
           <TextField
               label="Número de Tarima"
               value={numeroTarima}
@@ -376,6 +415,7 @@ const EtiquetadoBFX: React.FC = () => {
             <MenuItem value="Bultos">Bultos</MenuItem>
             <MenuItem value="Millares">Millares</MenuItem>
             <MenuItem value="Cajas">Cajas</MenuItem>
+            <MenuItem value="Rollos">Rollos</MenuItem>
           </Select>
         </Box>
         <Box className='impresion-button-bfx'>
