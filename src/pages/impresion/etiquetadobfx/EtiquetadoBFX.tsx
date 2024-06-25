@@ -8,7 +8,6 @@ import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface Area {
   id: number;

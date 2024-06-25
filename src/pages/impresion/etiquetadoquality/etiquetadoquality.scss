@@ -53,4 +53,48 @@ html, body, #root {
       background-color: #27575d; // Color más oscuro en hover para efecto visual
     }
   }
+
+  .quality-modal-content {
+  background-color: #ffffff;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  position: relative;
+  margin: 20px auto;
+}
+
+.quality-modal-header {
+  background-color: #306A74;
+  color: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quality-modal-body {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.quality-modal-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  background-color: #f4f4f4;
+}
+
+.quality-modal-footer .generate-button {
+  background-color: #4A90E2; // Azul más claro para el botón
+  color: white;
+  &:hover {
+    background-color: #417cbd; // Azul un poco más oscuro al pasar el mouse
+  }
+}
+
   

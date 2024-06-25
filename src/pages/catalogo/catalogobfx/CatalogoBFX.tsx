@@ -24,6 +24,7 @@ interface RowData {
   trazabilidad: string;
   orden: number;
   rfid: string;
+  uom: string;
   status: string;
 }
 
@@ -45,13 +46,39 @@ const CatalogoBFX: React.FC = () => {
   };
 
   const handlePrintClick = (row: RowData) => {
-    axios.post(`https://localhost:7204/Printer/SendSATOCommandNoSave`, { id: row.id })
-      .then(response => console.log('Impresión iniciada:', response.data))
-      .catch(error => console.error('Error al imprimir:', error));
+    const postData = {
+      area: row.area,
+      claveProducto: row.claveProducto,
+      nombreProducto: row.nombreProducto,
+      claveOperador: row.operador, // Asumiendo que 'claveOperador' puede ser deducido del campo 'operador'
+      operador: row.operador,
+      turno: row.turno,
+      pesoTarima: row.pesoTarima,
+      pesoBruto: row.pesoBruto,
+      pesoNeto: row.pesoNeto,
+      piezas: row.piezas,
+      trazabilidad: row.trazabilidad,
+      orden: row.orden.toString(),
+      rfid: row.rfid,
+      status: row.status,
+      uom: row.uom, // Asegúrate de que esta propiedad está correctamente definida en tus filas
+      fecha: row.fecha // Considera si necesitas transformar el formato de la fecha para el backend
+    };
+  
+    axios.post(`https://localhost:7204/Printer/SendSATOCommandNoSave`, postData)
+      .then(response => {
+        console.log('Impresión iniciada:', response.data);
+        // Puedes manejar la respuesta de éxito aquí, como mostrar un mensaje de éxito.
+      })
+      .catch(error => {
+        console.error('Error al imprimir:', error);
+        // Puedes manejar errores aquí, como mostrar un mensaje de error.
+      });
   };
+  
 
   const handleCloseModal = () => {
-    setOpenModal(false);
+    setOpenModal(false);  
   };
 
   const columns: GridColDef[] = [

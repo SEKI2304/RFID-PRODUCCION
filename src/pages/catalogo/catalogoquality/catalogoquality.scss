@@ -1,27 +1,94 @@
 html, body, #root {
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
-  }
-  
-  .catalogo-destiny {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  height: 100%;
+  margin: 0;
+  overflow: hidden; // Consider if you want to keep overflow hidden globally
+}
 
-    padding: 16px;
-    position: relative;
+.catalogo-quality {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  width: 100%;
+  max-width: 98%;
+  margin: auto;
+
+  .back-button {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10; /// Ensure the button is above other content
   }
 
-  .catalogo-destiny .back-button {
-    position: absolute;
-    top: 16px;
-    left: 16px;
+  .title {
+      margin-top: 16px; // Adjust top margin to provide spacing
+      padding-left: 60px; // Increase left padding to push the text further from the back button
+      text-align: left; // Align text to the left to utilize the padding effectively
+      width: 100%; // Add padding to avoid overlap with back button
   }
-  
-  .catalogo-destiny .title {
-    width: 100%;
-    text-align: center;
-    margin-bottom: 32px;
+
+  .MuiDataGrid-root {
+      width: 100%; // Set the DataGrid width to 100% of its parent container
+      height: 600px; // Set a fixed height or adjust as necessary
+      overflow-x: auto; // Enable horizontal scrolling
+      overflow-y: auto; // Enable vertical scrolling
+      margin: 20px 0; // Add some vertical margin
   }
+
+  .quality-modal-content {
+      width: 90%;
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+      position: relative;
+      overflow-y: auto; // Allows vertical scrolling if content is too long
+  }
+
+  .quality-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+  }
+
+  .quality-modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr; // Two columns
+      gap: 10px;
+      margin-bottom: 20px;
+  }
+
+  .quality-modal-body .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+  }
+
+  .quality-modal-footer {
+      display: flex;
+      justify-content: center;
+  }
+
+  .img-etiquetado {
+      max-height: 60px;
+  }
+
+  .quality-generate-button {
+      background-color: #46707e;
+      color: white;
+  }
+}
+
+@media (max-width: 600px) {
+  .title {
+      font-size: 16px; // Smaller font size for smaller screens
+      padding-left: 30px; // Less padding for smaller screens
+  }
+  .back-button {
+      top: 10px; // Adjust position to fit smaller screens
+  }
+}
