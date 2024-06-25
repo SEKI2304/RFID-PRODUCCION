@@ -324,7 +324,7 @@ const EtiquetadoBFX: React.FC = () => {
       fecha: date
     };
   
-    axios.post('https://localhost:7204/api/RfidLabel', data)
+    axios.post('https://localhost:7204/api/SendSATOCommand', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
