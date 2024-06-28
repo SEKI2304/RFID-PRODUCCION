@@ -6,7 +6,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
-import { Autocomplete } from '@mui/material';
+import { Autocomplete, createFilterOptions } from '@mui/material';
 import jsPDF from 'jspdf';
 
 interface Area {
@@ -324,7 +324,11 @@ const EtiquetadoBFX: React.FC = () => {
       fecha: date
     };
   
+<<<<<<< Updated upstream
     axios.post('https://localhost:7204/api/SendSATOCommand', data)
+=======
+    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
+>>>>>>> Stashed changes
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
@@ -370,7 +374,11 @@ const EtiquetadoBFX: React.FC = () => {
               value={ordenes.find(o => o.id === selectedOrden)}
               onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
               options={ordenes}
-              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + option.producto}
+              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
+              filterOptions={createFilterOptions({
+                matchFrom: 'start',
+                stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
+              })}
               renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
