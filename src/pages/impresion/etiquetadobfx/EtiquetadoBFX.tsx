@@ -324,11 +324,7 @@ const EtiquetadoBFX: React.FC = () => {
       fecha: date
     };
   
-<<<<<<< Updated upstream
-    axios.post('https://localhost:7204/api/SendSATOCommand', data)
-=======
     axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
->>>>>>> Stashed changes
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
