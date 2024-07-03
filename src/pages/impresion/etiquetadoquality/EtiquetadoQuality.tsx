@@ -306,17 +306,17 @@ const EtiquetadoQuality: React.FC = () => {
   
     doc.setFontSize(150);
     doc.text(`${claveProducto}`, 25, 45);
-  
+
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
-  
-    doc.setFontSize(50);
-    doc.text(`LOTE:${orden}`, 20, 165);
-    doc.text(`${fecha} `, 155, 165);
-    
-    doc.setFontSize(70);
-    doc.text(`${pesoNeto} KGM`, 70, 200);
-  
+
+    doc.setFontSize(56);
+    doc.text(`LOTE:${orden}`, 20, 167);
+    doc.text(`${fecha} `, 155, 167);
+
+    doc.setFontSize(80);
+    doc.text(`${pesoNeto} KGM`, 80, 205);
+
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
