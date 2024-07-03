@@ -311,11 +311,11 @@ const EtiquetadoQuality: React.FC = () => {
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
   
     doc.setFontSize(50);
-    doc.text(`${pesoNeto} KGM`, 20, 165);
-    doc.text(`LOTE:${orden}`, 155, 165);
+    doc.text(`LOTE:${orden}`, 20, 165);
+    doc.text(`${fecha} `, 155, 165);
     
     doc.setFontSize(70);
-    doc.text(`${fecha}`, 60, 200);
+    doc.text(`${pesoNeto} KGM`, 70, 200);
   
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
