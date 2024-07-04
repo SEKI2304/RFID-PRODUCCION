@@ -19,7 +19,7 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "axios": "^1.7.2",
-    "bwip-js": "^4.4.0",
+    "bwip-js": "^4.5.0",
     "date-fns": "^3.6.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

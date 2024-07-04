@@ -7,7 +7,7 @@ import axios from 'axios';
 import './etiquetadodestiny.scss';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
-
+import * as bwipjs from 'bwip-js';
 interface Area {
   id: number;
   area: string;
@@ -54,6 +54,20 @@ interface EtiquetaData {
   pesoNeto: number;
   orden: string;
   fecha: string;
+}
+
+interface EtiquetaData2 {
+  shippingUnits: number;
+  uom: string;
+  inventoryLot: string;
+  traceabilityCode: string;
+  customerPO: string;
+  qtyUOM: number;
+  piezas: number;
+  itemDescription: string;
+  itemNumber: string;
+  pesoBruto: number;
+  pesoNeto: number;
 }
 
 interface InfoExtraDestiny {
@@ -318,17 +332,17 @@ const [resetKey, setResetKey] = useState(0);
   
     doc.setFontSize(150);
     doc.text(`${claveProducto}`, 25, 45);
-  
+
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
-  
-    doc.setFontSize(50);
-    doc.text(`LOTE:${orden}`, 20, 165);
-    doc.text(`${fecha} `, 155, 165);
-    
-    doc.setFontSize(70);
-    doc.text(`${pesoNeto} KGM`, 70, 200);
-  
+
+    doc.setFontSize(56);
+    doc.text(`LOTE:${orden}`, 20, 167);
+    doc.text(`${fecha} `, 155, 167);
+
+    doc.setFontSize(80);
+    doc.text(`${pesoNeto} KGM`, 80, 205);
+
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
@@ -337,8 +351,6 @@ const [resetKey, setResetKey] = useState(0);
   
     window.open(doc.output('bloburl'), '_blank');
   };
-
-
 
   const handleConfirmEtiqueta = () => {
     const area = areas.find(a => a.id === selectedArea)?.area;
