@@ -318,7 +318,13 @@ const [resetKey, setResetKey] = useState(0);
     setSelectedUOM('');
     setDate('');
     setTraceabilityCode('');
-
+    setSelectedUOM('');
+    setQtyUOM('');
+    setShippingUnits('');
+    setInventoryLot(null);
+    setCustomerPO('');
+    setItemDescription('');
+    setItemNumber('');
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
@@ -756,6 +762,7 @@ const [resetKey, setResetKey] = useState(0);
               }}
           />
           <TextField
+            key={`piezas-${resetKey}`}
             fullWidth
             variant="outlined"
             type="number"
@@ -763,19 +770,21 @@ const [resetKey, setResetKey] = useState(0);
             InputProps={{ readOnly: true }}
           />
 
-          <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true }} variant="outlined" />
+          <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true }} variant="outlined" key={`UOM-${resetKey}`}/>
             
           <Autocomplete
-                value={inventoryLot}
-                onChange={(event, newValue) => {
-                    setInventoryLot(newValue);
-                }}
-                options={data}
-                getOptionLabel={(option) => `${option.u_PO2} - ${option.clave} ${option.producto}`}
-                renderInput={(params) => <TextField {...params} label="Inventory Lot" fullWidth />}
-            />
+            key={`Inventory Lot-${resetKey}`}
+            value={inventoryLot}
+            onChange={(event, newValue) => {
+                setInventoryLot(newValue);
+            }}
+            options={data}
+            getOptionLabel={(option) => `${option.u_PO2} - ${option.clave} ${option.producto}`}
+            renderInput={(params) => <TextField {...params} label="Inventory Lot" fullWidth />}
+          />
 
           <TextField
+            key={`QTY/UOM(Eaches)-${resetKey}`}
             fullWidth
             label="Qty/UOM(Eaches)"
             variant="outlined"
@@ -784,6 +793,7 @@ const [resetKey, setResetKey] = useState(0);
             onChange={handleQtyUOMChange}
           />
           <TextField
+            key={`palletID-${resetKey}`}
             fullWidth
             label="Pallet ID"
             variant="outlined"
@@ -792,6 +802,7 @@ const [resetKey, setResetKey] = useState(0);
             InputProps={{ readOnly: true }} // Hace el campo de solo lectura si no requieres que sea editable
           />
           <TextField
+            key={`Shipping Units/Pallet-${resetKey}`}
             fullWidth
             label="Shipping Units/Pallet"
             variant="outlined"
