@@ -56,6 +56,11 @@ interface EtiquetaData {
   fecha: string;
 }
 
+interface Printer {
+  name: string;
+  ip: string;
+}
+
 const EtiquetadoQuality: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
@@ -89,6 +94,12 @@ const EtiquetadoQuality: React.FC = () => {
   const [qpsItemNumber, setQpsItemNumber] = useState<string>('');
   const [lot, setLot] = useState<number | ''>('');
 
+  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+
+  const printerOptions = [
+    { name: "Impresora 1", ip: "172.16.20.56" },
+    { name: "Impresora 2", ip: "172.16.20.57" }
+  ];
 
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const newPesoBruto = parseFloat(event.target.value);
@@ -329,6 +340,12 @@ const EtiquetadoQuality: React.FC = () => {
 
 
   const handleConfirmEtiqueta = () => {
+    if (!selectedPrinter) {
+        alert('Por favor, seleccione una impresora.');
+        return;
+    }
+
+    const url = `http://172.16.10.31/Printer/QualityPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
@@ -365,18 +382,17 @@ const EtiquetadoQuality: React.FC = () => {
       }
     };
   
-    axios.post('http://172.16.10.31/Printer/SendSATOCommandProdExtrasQuality', data)
-      .then(response => {
-        console.log('Etiqueta generada:', response.data);
-        // Aquí podrías manejar el bioFlexLabelId si es necesario
-        // Por ejemplo: setBioFlexLabelId(response.data.bioFlexLabelId);
-        resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
-        handleCloseModal(); // Cierra el modal después de confirmar
-        generatePDF(data); // Llama a generatePDF aquí después de la respuesta exitosa 
-      })
-      .catch(error => {
-        console.error('Error generating etiqueta:', error);
-      });
+    axios.post(url, data)
+        .then(response => {
+            console.log('Etiqueta generada:', response.data);
+            resetForm();
+            handleCloseModal();
+            generatePDF(data);
+            // Si es necesario generar también el segundo PDF
+        })
+        .catch(error => {
+            console.error('Error al generar la etiqueta:', error);
+        });
   };
 
 
@@ -596,7 +612,7 @@ const EtiquetadoQuality: React.FC = () => {
       <Modal open={openModal} onClose={handleCloseModal}>
         <Paper className="quality-modal-content">
             <Box className="quality-modal-header">
-                <Typography variant="h6">Detalle de la Etiqueta Quality</Typography>
+                <Typography variant="h6">Detalle Etiqueta Quality</Typography>
                 <IconButton onClick={handleCloseModal}>
                     <CloseIcon />
                 </IconButton>
@@ -640,6 +656,15 @@ const EtiquetadoQuality: React.FC = () => {
                 </div>
             </Box>
             <Box className="quality-modal-footer">
+              <Autocomplete
+                value={selectedPrinter}
+                onChange={(event, newValue) => {
+                    setSelectedPrinter(newValue);
+                }}
+                options={printerOptions}
+                getOptionLabel={(option) => option.name}
+                renderInput={(params) => <TextField {...params} label="Seleccione una impresora" fullWidth />}
+              />
                 <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
                     Confirmar e Imprimir
                 </Button>
