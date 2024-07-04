@@ -26,7 +26,7 @@ const CatalogoArea: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('https://localhost:7204/api/Area', {
+        const response = await axios.get('http://172.16.10.31/api/Area', {
           headers: {
             'Accept': 'application/json'
           }

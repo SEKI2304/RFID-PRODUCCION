@@ -29,7 +29,7 @@ const CatalogoMaquina: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get('https://localhost:7204/api/Machine')
+      .get('http://172.16.10.31/api/Machine')
       .then((response) => {
         setRows(response.data);
       })

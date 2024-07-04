@@ -7,7 +7,8 @@ import axios from 'axios';
 import './etiquetadodestiny.scss';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
-import * as bwipjs from 'bwip-js';
+import bwipjs from 'bwip-js';
+
 interface Area {
   id: number;
   area: string;
@@ -79,6 +80,11 @@ interface InfoExtraDestiny {
     u_PO2: string;
 }
 
+interface Printer {
+  name: string;
+  ip: string;
+}
+
 
 const EtiquetadoDestiny: React.FC = () => {
   const navigate = useNavigate();
@@ -113,6 +119,12 @@ const [resetKey, setResetKey] = useState(0);
   const [customerPO, setCustomerPO] = useState<string>("");
   const [itemDescription, setItemDescription] = useState<string>("");
   const [itemNumber, setItemNumber] = useState<string>("");  
+  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+
+  const printerOptions = [
+    { name: "Impresora 1", ip: "172.16.20.56" },
+    { name: "Impresora 2", ip: "172.16.20.57" }
+  ];
 
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const newPesoBruto = parseFloat(event.target.value);
@@ -138,12 +150,12 @@ const [resetKey, setResetKey] = useState(0);
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value <= 30) {
+    if (!isNaN(value) && value <= 50) {
       setPesoTarima(value);
     } else {
       console.error('El valor no puede ser mayor que 30.');
       // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
-      setPesoTarima(Math.min(value, 30));
+      setPesoTarima(Math.min(value, 50));
     }
   };
 
@@ -191,10 +203,10 @@ const [resetKey, setResetKey] = useState(0);
   
 
   useEffect(() => {
-    axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
+    axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
       setAreas(response.data);
     });
-    axios.get<Turno[]>('https://localhost:7204/api/Turn').then(response => {
+    axios.get<Turno[]>('http://172.16.10.31/api/Turn').then(response => {
       setTurnos(response.data);
     });
   }, []);
@@ -202,11 +214,11 @@ const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
     if (selectedArea) {
       const areaName = areas.find(a => a.id === selectedArea)?.area ;
-      axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
+      axios.get<Orden[]>(`http://172.16.10.31/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
 
-      axios.get<Maquina[]>(`https://localhost:7204/api/Machine/${selectedArea}`)
+      axios.get<Maquina[]>(`http://172.16.10.31/api/Machine/${selectedArea}`)
         .then(response => {
           setFilteredMaquinas(response.data);
         })
@@ -222,7 +234,7 @@ const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     if (selectedArea) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
+      axios.get<Operador[]>(`http://172.16.10.31/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
@@ -274,7 +286,7 @@ const [resetKey, setResetKey] = useState(0);
 
     // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
       {/*  try {
-        const response = await axios.get('https://localhost:7204/api/RfidLabel');
+        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
         const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
@@ -352,38 +364,149 @@ const [resetKey, setResetKey] = useState(0);
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const handleConfirmEtiqueta = () => {
-    const area = areas.find(a => a.id === selectedArea)?.area;
-    const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
-    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos;
-    const turno = turnos.find(t => t.id === selectedTurno)?.turno;
+  const generatePDF2 = async (data: { shippingUnits?: number; uom?: string; inventoryLot?: string; traceabilityCode?: string; customerPO?: string; qtyUOM?: number; piezas?: number; itemDescription?: string; itemNumber?: string; pesoBruto: any; pesoNeto: any; postExtraDestinyDto?: any; }) => {
+    const {
+      postExtraDestinyDto: {
+        shippingUnits,
+        uom,
+        inventoryLot,
+        palletId: traceabilityCode,
+        customerPo: customerPO,
+        individualUnits: qtyUOM,
+        totalUnits: piezas,
+        productDescription: itemDescription,
+        itemNumber,
+      },
+      pesoBruto,
+      pesoNeto
+    } = data;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "letter", // Puedes ajustar el tamaño de página según necesites
+    });
+    // Generar y agregar el código de barras para itemNumber
+    const bwipjs = require('bwip-js');
+
+    doc.setFontSize(40);
+    doc.text(`PALLET CARD`, 20, 20);
+
+    doc.setFontSize(10);
+    doc.text(`Inventory lot:`, 7, 29);
+    doc.text(`Pallet ID:`, 7, 49);
+    doc.text(`Customer PO:`, 7, 74);
+    doc.text(`ItemDescription:`, 7, 99);
+    doc.text(`Item#:`, 7, 124);
+    doc.text(`GROSS WEIGHT:`, 7, 175);
+    doc.text(`Shipping Units/Pallet:`, 140, 9);
+    doc.text(`UOM:`, 209, 9);
+    doc.text(`QTY/UOM(Eaches):`, 140, 29);
+    doc.text(`Total Qty/Pallet(Eaches):`, 140, 49);
+    doc.text(`NET WEIGHT:`, 140, 175);
+
+    doc.setFontSize(36);
+    doc.text(`${inventoryLot}`, 7, 44);
+    doc.text(`${traceabilityCode}`, 7, 69);
+    doc.text(`${customerPO}`, 7, 94);
+    doc.text(`${shippingUnits}`, 140, 24);
+    doc.text(`${uom}`, 209, 24);
+    doc.text(`${qtyUOM}`, 140, 44);
+
+    doc.setFontSize(28);
+    doc.text(`${itemDescription}`, 7, 119);
+    
+    doc.setFontSize(14);
+    doc.text(`${itemNumber}`, 124, 167);
+    doc.text(`${piezas}`, 205, 92);
+
+    doc.setFontSize(90);
+    doc.text(`${pesoBruto}`, 50, 209);
+    doc.text(`${pesoNeto}`, 190, 209);
+
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+    doc.line(5, 5, 275, 5);
+    doc.line(138, 5, 138, 95);
+    doc.line(207, 5, 207, 25);
+    doc.line(5, 5, 5, 210);
+    doc.line(275, 5, 275, 210);
+    doc.line(5, 25, 275, 25);
+    doc.line(5, 45, 275, 45);
+    doc.line(5, 70, 138, 70);
+    doc.line(5, 95, 275, 95);
+    doc.line(138, 170, 138, 210);
+    doc.line(5, 120, 275, 120);
+    doc.line(5, 170, 275, 170);
+    doc.line(5, 210, 275, 210);
+
+    try {
+      const bwipjs = require('bwip-js');
+      const canvasItem = document.createElement("canvas");
+      await bwipjs.toCanvas(canvasItem, {
+          bcid: 'code128',       // Barcode type
+          text: itemNumber,      // Text to encode
+          scale: 3,              // 3x scaling factor
+          height: 10,            // Bar height, in millimeters
+      });
+      const itemNumberUrl = canvasItem.toDataURL("image/png");
+      doc.addImage(itemNumberUrl, "PNG", 55, 130, 160, 30);
+  
+      const canvasTotal = document.createElement("canvas");
+      await bwipjs.toCanvas(canvasTotal, {
+          bcid: 'code128',               // Barcode type
+          text: piezas.toString(),       // Text to encode
+          scale: 3,                      // 3x scaling factor
+          height: 10,                    // Bar height, in millimeters
+      });
+      const totalQtyPalletUrl = canvasTotal.toDataURL("image/png");
+      doc.addImage(totalQtyPalletUrl, "PNG", 170, 55, 70, 30);
+    } catch (error) {
+        console.error("Error generating barcode:", error);
+    }
+
+    doc.save('rotulodestiny.pdf');
+  
+  };
+
+  
+
+  const handleConfirmEtiqueta = async () => {
+    // Asegura que los datos vienen en el formato esperado
+    if (!selectedPrinter) {
+        alert('Por favor, seleccione una impresora.');
+        return;
+    }
+
+    const url = `http://172.16.10.31/Printer/DestinyPrinterIP?ip=${selectedPrinter.ip}`;
+    const area = areas.find(a => a.id === selectedArea)?.area || '';
+    const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() || '';
+    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina || '';
+    const producto = filteredProductos || '';
+    const turno = turnos.find(t => t.id === selectedTurno)?.turno || '';
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
 
-    // Asegúrate de que inventoryLot se envíe como una cadena, aquí un ejemplo:
-    const inventoryLotString = inventoryLot ? inventoryLot.u_PO2 : ''; // Asumiendo que 'id' es el atributo que necesitas.
-
     const data = {
-      area: area || '',
+      area: area,
       claveProducto: producto.split(' ')[0],
       nombreProducto: producto.split(' ').slice(1).join(' '),
       claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
       operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
-      turno: turno || '',
+      turno: turno,
       pesoTarima: pesoTarima || 0,
       pesoBruto: pesoBruto || 0,
       pesoNeto: pesoNeto || 0,
       piezas: piezas || 0,
-      trazabilidad: trazabilidad,
-      orden: orden || "",
-      rfid: rfid,
+      trazabilidad: trazabilidad || '',
+      orden: orden,
+      rfid: rfid || '',
       status: 1,
-      uom: selectedUOM,
-      fecha: date,
+      uom: selectedUOM || '',
+      fecha: date || '',
       postExtraDestinyDto: {
         shippingUnits: shippingUnits || 0,
         uom: selectedUOM || '',
-        inventoryLot: inventoryLotString,
+        inventoryLot: inventoryLot ? inventoryLot.u_PO2 : '',
         individualUnits: qtyUOM || 0,
         palletId: traceabilityCode || '',
         customerPo: customerPO || '',
@@ -393,18 +516,20 @@ const [resetKey, setResetKey] = useState(0);
       }
     };
 
-    axios.post('https://localhost:7204/Printer/SendSATOCommandProdExtrasDestiny', data)
-    .then(response => {
-      console.log('Etiqueta generada:', response.data);
-      resetForm();
-      handleCloseModal();
-      generatePDF(data);
-    })
-    .catch(error => {
-      console.error('Error generating etiqueta:', error);
-      // Agregar manejo de error en la interfaz de usuario aquí.
-    });
-  };
+    axios.post(url, data)
+        .then(response => {
+            console.log('Etiqueta generada:', response.data);
+            resetForm();
+            handleCloseModal();
+            generatePDF(data);
+            // Si es necesario generar también el segundo PDF
+            generatePDF2(data);
+        })
+        .catch(error => {
+            console.error('Error al generar la etiqueta:', error);
+        });
+};
+
 
   const calculatePieces = () => {
     const qtyNumber = parseFloat(qtyUOM) || 0;
@@ -423,10 +548,10 @@ const [resetKey, setResetKey] = useState(0);
   };
 
   useEffect(() => {
-    axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
+    axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
       setAreas(response.data);
     });
-    axios.get<Turno[]>('https://localhost:7204/api/Turn').then(response => {
+    axios.get<Turno[]>('http://172.16.10.31/api/Turn').then(response => {
       setTurnos(response.data);
     });
   }, []);
@@ -434,11 +559,11 @@ const [resetKey, setResetKey] = useState(0);
   useEffect(() => {
     if (selectedArea) {
       const areaName = areas.find(a => a.id === selectedArea)?.area;
-      axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
+      axios.get<Orden[]>(`http://172.16.10.31/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
 
-      axios.get<Maquina[]>(`https://localhost:7204/api/Machine/${selectedArea}`)
+      axios.get<Maquina[]>(`http://172.16.10.31/api/Machine/${selectedArea}`)
         .then(response => {
           setFilteredMaquinas(response.data);
         })
@@ -454,7 +579,7 @@ const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     if (selectedArea) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
+      axios.get<Operador[]>(`http://172.16.10.31/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
@@ -464,10 +589,10 @@ const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
   if (selectedArea && selectedOrden) {
-    axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+    axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
       const orden = response.data.find(orden => orden.id === selectedOrden);
       if (orden) {
-        const productoConcatenado = `${orden.claveProducto} + ${orden.producto}`;
+        const productoConcatenado = `${orden.claveProducto}  ${orden.producto}`;
         setFilteredProductos(productoConcatenado); // Correcto para una cadena simple
       }
     });
@@ -482,7 +607,7 @@ const [resetKey, setResetKey] = useState(0);
   }, [qtyUOM, shippingUnits]);
 
   useEffect(() => {
-        axios.get('https://localhost:7204/api/LabelDestiny/GetInfoExtraDestiny')
+        axios.get('http://172.16.10.31/api/LabelDestiny/GetInfoExtraDestiny')
             .then(response => {
                 setData(response.data);
             })
@@ -729,6 +854,16 @@ const [resetKey, setResetKey] = useState(0);
             </Box>
           </Box>
           <Box className="modal-footer">
+          <Autocomplete
+                value={selectedPrinter}
+                onChange={(event, newValue) => {
+                    setSelectedPrinter(newValue);
+                }}
+                options={printerOptions}
+                getOptionLabel={(option) => option.name}
+                renderInput={(params) => <TextField {...params} label="Seleccione una impresora" fullWidth />}
+            />
+
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Confirmar e Imprimir
             </Button>

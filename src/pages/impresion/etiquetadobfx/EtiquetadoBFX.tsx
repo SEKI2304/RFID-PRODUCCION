@@ -56,6 +56,10 @@ interface EtiquetaData {
   fecha: string;
 }
 
+interface Printer {
+  name: string;
+  ip: string;
+}
 
 const EtiquetadoBFX: React.FC = () => {
   const navigate = useNavigate();
@@ -82,6 +86,13 @@ const EtiquetadoBFX: React.FC = () => {
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
   const [resetKey, setResetKey] = useState(0);
+
+  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+
+  const printerOptions = [
+    { name: "Impresora 1", ip: "172.16.20.56" },
+    { name: "Impresora 2", ip: "172.16.20.57" }
+  ];
   
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const newPesoBruto = parseFloat(event.target.value);
@@ -122,10 +133,10 @@ const EtiquetadoBFX: React.FC = () => {
   };
 
   useEffect(() => {
-    axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
+    axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
       setAreas(response.data);
     });
-    axios.get<Turno[]>('https://localhost:7204/api/Turn').then(response => {
+    axios.get<Turno[]>('http://172.16.10.31/api/Turn').then(response => {
       setTurnos(response.data);
     });
   }, []);
@@ -133,11 +144,11 @@ const EtiquetadoBFX: React.FC = () => {
   useEffect(() => {
     if (selectedArea) {
       const areaName = areas.find(a => a.id === selectedArea)?.area ;
-      axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
+      axios.get<Orden[]>(`http://172.16.10.31/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
 
-      axios.get<Maquina[]>(`https://localhost:7204/api/Machine/${selectedArea}`)
+      axios.get<Maquina[]>(`http://172.16.10.31/api/Machine/${selectedArea}`)
         .then(response => {
           setFilteredMaquinas(response.data);
         })
@@ -153,7 +164,7 @@ const EtiquetadoBFX: React.FC = () => {
 
   useEffect(() => {
     if (selectedArea) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
+      axios.get<Operador[]>(`http://172.16.10.31/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
@@ -163,7 +174,7 @@ const EtiquetadoBFX: React.FC = () => {
 
   useEffect(() => {
   if (selectedArea && selectedOrden) {
-    axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+    axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
       const orden = response.data.find(orden => orden.id === selectedOrden);
       if (orden) {
         const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
@@ -218,7 +229,7 @@ const EtiquetadoBFX: React.FC = () => {
 
     // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
       {/*  try {
-        const response = await axios.get('https://localhost:7204/api/RfidLabel');
+        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
         const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
@@ -298,6 +309,11 @@ const EtiquetadoBFX: React.FC = () => {
 
 
   const handleConfirmEtiqueta = () => {
+    if (!selectedPrinter) {
+        alert('Por favor, seleccione una impresora.');
+        return;
+    }
+    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
@@ -324,16 +340,16 @@ const EtiquetadoBFX: React.FC = () => {
       fecha: date
     };
   
-    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
-      .then(response => {
-        console.log('Etiqueta generada:', response.data);
-        resetForm(); // Llama a resetForm para restablecer el formulario después de confirmar la etiqueta
-        handleCloseModal(); // Cierra el modal después de confirmar
-        generatePDF(data); // Llama a generatePDF aquí después de la respuesta exitosa 
-      })
-      .catch(error => {
-        console.error('Error generating etiqueta:', error);
-      });
+    axios.post(url, data)
+        .then(response => {
+            console.log('Etiqueta generada:', response.data);
+            resetForm();
+            handleCloseModal();
+            generatePDF(data);
+        })
+        .catch(error => {
+            console.error('Error al generar la etiqueta:', error);
+        });
   };
   
 
@@ -541,6 +557,15 @@ const EtiquetadoBFX: React.FC = () => {
             </div>
           </Box>
           <Box className="bfx-modal-footer">
+            <Autocomplete
+              value={selectedPrinter}
+              onChange={(event, newValue: Printer | null) => {
+                setSelectedPrinter(newValue);  // Directly set the new value
+              }}
+              options={printerOptions} // Ensure printerOptions is of type Printer[]
+              getOptionLabel={(option) => option.name}
+              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
+            />
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir
             </Button>

@@ -33,7 +33,7 @@ const CatalogoDestiny: React.FC = () => {
   useEffect(() => {
     const fetchLabels = async () => {
       try {
-        const response = await axios.get('https://localhost:7204/api/LabelDestiny');
+        const response = await axios.get('http://172.16.10.31/api/LabelDestiny');
         const data = response.data.map((item: any) => ({
           id: item.id,
           Area: item.prodEtiquetaRFID.area,

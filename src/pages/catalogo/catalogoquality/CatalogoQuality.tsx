@@ -29,7 +29,7 @@ const CatalogoQuality: React.FC = () => {
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
 
   useEffect(() => {
-    axios.get('https://localhost:7204/api/LabelQuality')
+    axios.get('http://172.16.10.31/api/LabelQuality')
       .then(response => setRows(response.data))
       .catch(error => console.error('Error fetching data:', error));
   }, []);
@@ -40,7 +40,7 @@ const CatalogoQuality: React.FC = () => {
   };
 
   const handlePrintClick = (row: RowData) => {
-    axios.post(`https://localhost:7204/Printer/SendSATOCommandNoSave`, row)
+    axios.post(`http://172.16.10.31/Printer/SendSATOCommandNoSave`, row)
       .then(response => console.log('Impresión iniciada:', response.data))
       .catch(error => console.error('Error al imprimir:', error));
   };

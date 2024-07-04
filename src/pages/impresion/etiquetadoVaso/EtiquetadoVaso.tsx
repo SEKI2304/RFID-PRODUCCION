@@ -111,10 +111,10 @@ const EtiquetadoVaso: React.FC = () => {
   };
 
   useEffect(() => {
-    axios.get<Area[]>('https://localhost:7204/api/Area').then(response => {
+    axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
       setAreas(response.data);
     });
-    axios.get<Turno[]>('https://localhost:7204/api/Turn').then(response => {
+    axios.get<Turno[]>('http://172.16.10.31/api/Turn').then(response => {
       setTurnos(response.data);
     });
   }, []);
@@ -122,11 +122,11 @@ const EtiquetadoVaso: React.FC = () => {
   useEffect(() => {
     if (selectedArea) {
       const areaName = areas.find(a => a.id === selectedArea)?.area ;
-      axios.get<Orden[]>(`https://localhost:7204/api/Order/${areaName}`).then(response => {
+      axios.get<Orden[]>(`http://172.16.10.31/api/Order/${areaName}`).then(response => {
         setOrdenes(response.data);
       });
 
-      axios.get<Maquina[]>(`https://localhost:7204/api/Machine/${selectedArea}`)
+      axios.get<Maquina[]>(`http://172.16.10.31/api/Machine/${selectedArea}`)
         .then(response => {
           setFilteredMaquinas(response.data);
         })
@@ -142,7 +142,7 @@ const EtiquetadoVaso: React.FC = () => {
 
   useEffect(() => {
     if (selectedArea) {
-      axios.get<Operador[]>(`https://localhost:7204/api/Operator?IdArea=${selectedArea}`)
+      axios.get<Operador[]>(`http://172.16.10.31/api/Operator?IdArea=${selectedArea}`)
         .then(response => {
           setOperadores(response.data);
         })
@@ -152,7 +152,7 @@ const EtiquetadoVaso: React.FC = () => {
 
   useEffect(() => {
   if (selectedArea && selectedOrden) {
-    axios.get<Orden[]>(`https://localhost:7204/api/Order?areaId=${selectedArea}`).then(response => {
+    axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
       const orden = response.data.find(orden => orden.id === selectedOrden);
       if (orden) {
         const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
@@ -207,7 +207,7 @@ const EtiquetadoVaso: React.FC = () => {
 
     // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
       {/*  try {
-        const response = await axios.get('https://localhost:7204/api/RfidLabel');
+        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
         const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
@@ -252,7 +252,7 @@ const EtiquetadoVaso: React.FC = () => {
       fecha: date
     };
 
-    axios.post('https://localhost:7204/Printer/SendSATOCommand', data)
+    axios.post('http://172.16.10.31/Printer/SendSATOCommand', data)
       .then(response => {
         console.log('Etiqueta generada:', response.data);
         handleCloseModal();

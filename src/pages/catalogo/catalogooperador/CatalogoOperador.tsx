@@ -31,7 +31,7 @@ const CatalogoOperador: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get('https://localhost:7204/api/Operator/all-operators')
+      .get('http://172.16.10.31/api/Operator/all-operators')
       .then((response) => {
         setRows(response.data);
       })

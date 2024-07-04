@@ -35,7 +35,7 @@ const CatalogoBFX: React.FC = () => {
   const [selectedRow, setSelectedRow] = useState<RowData | null>(null);
 
   useEffect(() => {
-    axios.get('https://localhost:7204/api/RfidLabel')
+    axios.get('http://172.16.10.31/api/RfidLabel')
       .then(response => setRows(response.data))
       .catch(error => console.error('Error fetching data:', error));
   }, []);
@@ -65,7 +65,7 @@ const CatalogoBFX: React.FC = () => {
       fecha: row.fecha // Considera si necesitas transformar el formato de la fecha para el backend
     };
   
-    axios.post(`https://localhost:7204/Printer/SendSATOCommandNoSave`, postData)
+    axios.post(`http://172.16.10.31/Printer/SendSATOCommandNoSave`, postData)
       .then(response => {
         console.log('Impresión iniciada:', response.data);
         // Puedes manejar la respuesta de éxito aquí, como mostrar un mensaje de éxito.

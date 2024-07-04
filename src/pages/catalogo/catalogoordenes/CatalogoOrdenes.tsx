@@ -26,7 +26,7 @@ const CatalogoOrdenes: React.FC = () => {
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({});
 
   useEffect(() => {
-    axios.get('https://localhost:7204/api/Order')
+    axios.get('http://172.16.10.31/api/Order')
       .then((response) => {
         setRows(response.data);
       })
