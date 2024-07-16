@@ -8,6 +8,7 @@ import './etiquetadobfx_produccion.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 import jsPDF from 'jspdf';
+import Swal from 'sweetalert2';
 
 interface Area {
   id: number;
@@ -302,47 +303,93 @@ const EtiquetadoBFX_produccion: React.FC = () => {
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
-        alert('Por favor, seleccione una impresora.');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Impresora no seleccionada',
+            text: 'Por favor, seleccione una impresora.',
+        });
         return;
     }
-    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
     const producto = filteredProductos;
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
-  
+
     const data = {
-      area: area || '',
-      claveProducto: producto.split(' ')[0],
-      nombreProducto: producto.split(' ').slice(1).join(' '),
-      claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
-      operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
-      turno: turno || '',
-      pesoTarima: pesoTarima || 0,
-      pesoBruto: pesoBruto || 0,
-      pesoNeto: pesoNeto || 0,
-      piezas: piezas || 0,
-      trazabilidad: trazabilidad,
-      orden: orden || "",
-      rfid: rfid,
-      status: 1,
-      uom: unidad,
-      fecha: date
+        area: area || '',
+        claveProducto: producto.split(' ')[0],
+        nombreProducto: producto.split(' ').slice(1).join(' '),
+        claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
+        operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
+        turno: turno || '',
+        pesoTarima: pesoTarima || 0,
+        pesoBruto: pesoBruto || 0,
+        pesoNeto: pesoNeto || 0,
+        piezas: piezas || 0,
+        trazabilidad: trazabilidad,
+        orden: orden || "",
+        rfid: rfid,
+        status: 1,
+        uom: unidad,
+        fecha: date
     };
-  
+
+    // Validación de campos requeridos
+    const requiredFields = [
+        { name: 'Área', value: data.area },
+        { name: 'Clave de Producto', value: data.claveProducto },
+        { name: 'Nombre de Producto', value: data.nombreProducto },
+        { name: 'Clave de Operador', value: data.claveOperador },
+        { name: 'Operador', value: data.operador },
+        { name: 'Turno', value: data.turno },
+        { name: 'Peso Tarima', value: data.pesoTarima },
+        { name: 'Peso Bruto', value: data.pesoBruto },
+        { name: 'Peso Neto', value: data.pesoNeto },
+        { name: 'Piezas', value: data.piezas },
+        { name: 'Orden', value: data.orden },
+        { name: 'RFID', value: data.rfid },
+        { name: 'UOM', value: data.uom },
+        { name: 'Fecha', value: data.fecha }
+    ];
+
+    const emptyFields = requiredFields.filter(field => !field.value);
+
+    if (emptyFields.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos incompletos',
+            text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+        });
+        return;
+    }
+
+    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
     axios.post(url, data)
         .then(response => {
-            console.log('Etiqueta generada:', response.data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Etiqueta generada',
+                text: 'La etiqueta se ha generado correctamente.',
+            });
             resetForm();
             handleCloseModal();
             generatePDF(data);
         })
         .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Hubo un error al generar la etiqueta.',
+            });
             console.error('Error al generar la etiqueta:', error);
         });
-  };
+};
+
+
   
 
 
@@ -473,7 +520,7 @@ const EtiquetadoBFX_produccion: React.FC = () => {
           </Button>
         </Box>
       </Box>
-      <Modal open={openModal} onClose={handleCloseModal}>
+      <Modal open={openModal} onClose={handleCloseModal} style={{ zIndex: 1050 }}>
         <Paper className="bfx-modal-content">
           <Box className="bfx-modal-header">
             <Typography variant="h6">Vista Previa de la Etiqueta</Typography>

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadoquality_produccion.scss';
-
+import Swal from 'sweetalert2';
 interface Area {
   id: number;
   area: string;
@@ -326,9 +326,13 @@ const EtiquetadoQuality_produccion: React.FC = () => {
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
-        alert('Por favor, seleccione una impresora.');
-        return;
-    }
+      Swal.fire({
+          icon: 'warning',
+          title: 'Impresora no seleccionada',
+          text: 'Por favor, seleccione una impresora.',
+      });
+      return;
+  }
 
     const url = `http://172.16.10.31/Printer/QualityPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -366,16 +370,61 @@ const EtiquetadoQuality_produccion: React.FC = () => {
         traceability: traceabilityCode
       }
     };
-  
+    
+    const requiredFields = [
+      { name: 'Área', value: data.area },
+      { name: 'Clave de Producto', value: data.claveProducto },
+      { name: 'Nombre de Producto', value: data.nombreProducto },
+      { name: 'Clave de Operador', value: data.claveOperador },
+      { name: 'Operador', value: data.operador },
+      { name: 'Turno', value: data.turno },
+      { name: 'Peso Tarima', value: data.pesoTarima },
+      { name: 'Peso Bruto', value: data.pesoBruto },
+      { name: 'Peso Neto', value: data.pesoNeto },
+      { name: 'Piezas', value: data.piezas },
+      { name: 'Trazabilidad', value: data.trazabilidad },
+      { name: 'Orden', value: data.orden },
+      { name: 'RFID', value: data.rfid },
+      { name: 'UOM', value: data.uom },
+      { name: 'Fecha', value: data.fecha },
+      { name: 'Individual Units', value: data.postExtraQuality.individualUnits },
+      { name: 'Item Description', value: data.postExtraQuality.itemDescription },
+      { name: 'Item Number', value: data.postExtraQuality.itemNumber },
+      { name: 'Total Units', value: data.postExtraQuality.totalUnits },
+      { name: 'Shipping Units', value: data.postExtraQuality.shippingUnits },
+      { name: 'Inventory Lot', value: data.postExtraQuality.inventoryLot },
+      { name: 'Customer', value: data.postExtraQuality.customer },
+      { name: 'Traceability', value: data.postExtraQuality.traceability }
+  ];
+
+    const emptyFields = requiredFields.filter(field => !field.value);
+
+  if (emptyFields.length > 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Campos incompletos',
+          text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+      });
+      return;
+  }
+
     axios.post(url, data)
         .then(response => {
-            console.log('Etiqueta generada:', response.data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Etiqueta generada',
+                text: 'La etiqueta se ha generado correctamente.',
+            });
             resetForm();
             handleCloseModal();
             generatePDF(data);
-            // Si es necesario generar también el segundo PDF
         })
         .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Hubo un error al generar la etiqueta.',
+            });
             console.error('Error al generar la etiqueta:', error);
         });
   };
@@ -565,12 +614,12 @@ const EtiquetadoQuality_produccion: React.FC = () => {
             />
         </Box>
         <Box className='impresion-button-destiny'>
-          <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
+          <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta} style={{ zIndex: 1050 }}>
             VISTA PREVIA
           </Button>
       </Box>
       </Box>
-      <Modal open={openModal} onClose={handleCloseModal}>
+      <Modal open={openModal} onClose={handleCloseModal} style={{ zIndex: 1050 }}>
         <Paper className="quality-modal-content">
             <Box className="quality-modal-header">
                 <Typography variant="h6">Detalle Etiqueta Quality</Typography>
