@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
-import './etiquetadodestiny.scss';
+import './etiquetadodestiny_produccion.scss';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
 import bwipjs from 'bwip-js';
@@ -46,7 +46,7 @@ interface Orden {
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
-  unidad: string;
+  unidad: string
 }
 
 interface EtiquetaData {
@@ -87,7 +87,7 @@ interface Printer {
 }
 
 
-const EtiquetadoDestiny: React.FC = () => {
+const EtiquetadoDestiny_produccion: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -108,7 +108,6 @@ const EtiquetadoDestiny: React.FC = () => {
   /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
-  const [numeroTarima, setNumeroTarima] = useState('');
   const [date, setDate] = useState('');
 const [resetKey, setResetKey] = useState(0);
   const [traceabilityCode, setTraceabilityCode] = useState('');
@@ -121,6 +120,7 @@ const [resetKey, setResetKey] = useState(0);
   const [itemDescription, setItemDescription] = useState<string>("");
   const [itemNumber, setItemNumber] = useState<string>("");  
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+  const [numeroTarimaGenerado, setNumeroTarimaGenerado] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
 
   const printerOptions = [
@@ -193,14 +193,14 @@ const [resetKey, setResetKey] = useState(0);
           const day = date.slice(8, 10);
 
           const formattedDate = `${day}${month}${year.slice(-2)}`;
-          const formattedNumeroTarima = numeroTarima.padStart(3, '0');
+          const formattedNumeroTarima = numeroTarimaGenerado;
 
           const newTraceabilityCode = `${machineCode}${formattedDate}${formattedNumeroTarima}`;
           setTraceabilityCode(newTraceabilityCode);
       };
 
       generateTraceabilityCode();
-  }, [selectedMaquina, date, numeroTarima, filteredMaquinas]);
+  }, [selectedMaquina, date, numeroTarimaGenerado, filteredMaquinas]);
 
   
 
@@ -260,73 +260,50 @@ const [resetKey, setResetKey] = useState(0);
 
   const generateTrazabilidad = async () => {
     const base = '2';
-    const areaMap: { [key: string]: string } = {
-      'EXTRUSIÓN': '1',
-      'IMPRESIÓN': '2',
-      'REFILADO': '3',
-      'BOLSEO': '4',
-      'VASO': '5',
-      'POUCH': '6',
-      'LAMINADO 1': '7',
-      'CINTA': '8',
-      'DIGITAL': '9',
+    const areaMap: { [key: string]: string | undefined } = {
+      'EXTRUSIÓN': '1', 'IMPRESIÓN': '2', 'REFILADO': '3', 'BOLSEO': '4',
+      'VASO': '5', 'POUCH': '6', 'LAMINADO 1': '7', 'CINTA': '8', 'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    let areaCode = areaMap[selectedAreaName] || '0';
-    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
-    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
-    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.toString().padStart(6, '0') : '000000';
+    const areaCode = areaMap[selectedAreaName] || '0';
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
+    const maquinaCode = maquinaNo.toString().padStart(2, '0');
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
+    const ordenCode = ordenNo.toString().padStart(6, '0');
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
-    // Rellenando el número de tarima a tres dígitos
-    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
-
-    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
-    setTrazabilidad(fullTrazabilidad);
-    setRfid(`000${fullTrazabilidad}`);
-
-    // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
-      {/*  try {
+    try {
         const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
-        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
-        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
-        const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
+        // Asegurar que solo consideramos los que tienen exactamente la longitud esperada
+        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => 
+            label.trazabilidad.startsWith(partialTrazabilidad) && label.trazabilidad.length === 13
+        );
+        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => 
+            parseInt(label.trazabilidad.slice(-3))
+        );
+        const nextConsecutivo = (consecutivos.length > 0 ? Math.max(...consecutivos) : 0) + 1;
         const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
 
         const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
         setTrazabilidad(fullTrazabilidad);
-        setRfid(`0000${fullTrazabilidad}`);
-      } catch (error) {
+        setRfid(`000${fullTrazabilidad}`);
+    } catch (error) {
         console.error('Error fetching RfidLabel data:', error);
         setTrazabilidad(`${partialTrazabilidad}001`);
-        setRfid(`0000${partialTrazabilidad}001`);
-      }*/}
-  };
+        setRfid(`000${partialTrazabilidad}001`);
+    }
+};
 
   const resetForm = () => {
-    setSelectedArea(undefined);
-    setSelectedOrden(undefined);
-    setSelectedMaquina(undefined);
-    setSelectedTurno(undefined);
-    setSelectedOperador(undefined);
     setPesoBruto(undefined);
     setPesoNeto(undefined);
     setPesoTarima(undefined);
     setPiezas(undefined);
-    setNumeroTarima('');
-    setSelectedUOM('');
-    setDate('');
-    setTraceabilityCode('');
-    setSelectedUOM('');
     setQtyUOM('');
     setShippingUnits('');
-    setInventoryLot(null);
-    setCustomerPO('');
-    setItemDescription('');
-    setItemNumber('');
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
@@ -657,7 +634,7 @@ const [resetKey, setResetKey] = useState(0);
   return (
     <div className='impresion-container-destiny'>
       <Box className='top-container-bfx'>
-        <IconButton onClick={() => navigate('/modulosimpresion')} className='button-back'>
+        <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
@@ -674,7 +651,6 @@ const [resetKey, setResetKey] = useState(0);
           shrink: true,
         }}/>
           <Autocomplete
-              key={`area-${resetKey}`}
               value={areas.find(area => area.id === selectedArea)}
               onChange={(event, newValue) => setSelectedArea(newValue?.id)}
               options={areas}
@@ -682,7 +658,6 @@ const [resetKey, setResetKey] = useState(0);
               renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
           <Autocomplete
-              key={`orden-${resetKey}`}
               value={ordenes.find(o => o.id === selectedOrden)}
               onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
               options={ordenes}
@@ -690,7 +665,6 @@ const [resetKey, setResetKey] = useState(0);
               renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
-              key={`maquina-${resetKey}`}
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}
               onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
               options={filteredMaquinas}
@@ -698,7 +672,6 @@ const [resetKey, setResetKey] = useState(0);
               renderInput={(params) => <TextField {...params} label="Máquina" />}
           />
           <TextField
-              key={`producto-${resetKey}`}
               fullWidth
               label="Producto"
               value={filteredProductos}
@@ -708,7 +681,6 @@ const [resetKey, setResetKey] = useState(0);
               variant="outlined"
           />
             <Autocomplete
-                key={`turno-${resetKey}`}
                 value={turnos.find(t => t.id === selectedTurno)}
                 onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
                 options={turnos}
@@ -717,7 +689,6 @@ const [resetKey, setResetKey] = useState(0);
             />
 
             <Autocomplete
-                key={`operador-${resetKey}`}
                 value={operadores.find(o => o.id === selectedOperador)}
                 onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
                 options={operadores}
@@ -754,17 +725,6 @@ const [resetKey, setResetKey] = useState(0);
               onChange={handlePesoTarimaChange}
           />
           <TextField
-              label="Número de Tarima"
-              value={numeroTarima}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Acepta solo números y limita a 3 caracteres.
-                if (/^\d{0,3}$/.test(value)) {
-                  setNumeroTarima(value);
-                }
-              }}
-          />
-          <TextField
             key={`piezas-${resetKey}`}
             fullWidth
             label="#"
@@ -777,7 +737,6 @@ const [resetKey, setResetKey] = useState(0);
           <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true }} variant="outlined" key={`UOM-${resetKey}`}/>
             
           <Autocomplete
-            key={`Inventory Lot-${resetKey}`}
             value={inventoryLot}
             onChange={(event, newValue) => {
                 setInventoryLot(newValue);
@@ -797,7 +756,6 @@ const [resetKey, setResetKey] = useState(0);
             onChange={handleQtyUOMChange}
           />
           <TextField
-            key={`palletID-${resetKey}`}
             fullWidth
             label="Pallet ID"
             variant="outlined"
@@ -889,4 +847,4 @@ const [resetKey, setResetKey] = useState(0);
   );
 };
 
-export default EtiquetadoDestiny;
+export default EtiquetadoDestiny_produccion;

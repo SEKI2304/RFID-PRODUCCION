@@ -41,7 +41,7 @@ function NavBar() {
     <AppBar position="static" className="appbar" sx={{ backgroundColor: 'white' }}>
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Link to="/dashboard">
+          <Link to="/">
             <img src={BFX_LOGO} alt="BFX Logo" className="appbar-logo" />
           </Link>
 

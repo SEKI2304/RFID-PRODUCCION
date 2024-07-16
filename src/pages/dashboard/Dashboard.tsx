@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Grid, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
@@ -11,30 +11,37 @@ import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import PrintIcon from '@mui/icons-material/Print';
 
 const icons = [
-  { icon: <ArrowUpwardIcon sx={{ fontSize: 60 }} />, label: 'ENTRADAS', path: '/entradas' },
-  { icon: <ExitToAppIcon sx={{ fontSize: 60 }} />, label: 'SALIDAS', path: '/salidas' },
-  { icon: <LocationOnIcon sx={{ fontSize: 60 }} />, label: 'UBICACIÓN', path: '/ubicacion' },
-  { icon: <WebIcon sx={{ fontSize: 60 }} />, label: 'CONSULTAS', path: '/consultas' },
-  { icon: <SignalWifi4BarIcon sx={{ fontSize: 60 }} />, label: 'HANDHELD', path: '/handheld' },
-  { icon: <SatelliteIcon sx={{ fontSize: 60 }} />, label: 'ANTENAS', path: '/antenas' },
-  { icon: <LibraryBooksIcon sx={{ fontSize: 60 }} />, label: 'CATALOGOS', path: '/catalogos' },
-  { icon: <PrintIcon sx={{ fontSize: 60 }} />, label: 'IMPRESION', path: '/modulosimpresion' },
+  { icon: PrintIcon, label: 'IMPRESION TARIMA PRODUCCION', path: '/ModulosTarima' },
+  { icon: ArrowUpwardIcon, label: 'ENTRADAS', path: '/entradas' },
+  { icon: ExitToAppIcon, label: 'SALIDAS', path: '/salidas' },
+  { icon: LocationOnIcon, label: 'UBICACIÓN', path: '/ubicacion' },
+  { icon: WebIcon, label: 'CONSULTAS', path: '/consultas' },
+  { icon: SignalWifi4BarIcon, label: 'HANDHELD', path: '/handheld' },
+  { icon: SatelliteIcon, label: 'ANTENAS', path: '/antenas' },
+  { icon: LibraryBooksIcon, label: 'CATALOGOS', path: '/catalogos' },
+  { icon: PrintIcon, label: 'IMPRESION MATERIA PRIMA', path: '/modulosimpresion' },
 ];
 
 export const Dashboard: React.FC = () => {
+  const theme = useTheme();
+  const isXSmall = useMediaQuery(theme.breakpoints.down('xs'));
+  const iconSize = isXSmall ? 40 : 60; // Smaller icons on very small devices
+
   return (
     <Box sx={{ flexGrow: 1, p: 4 }}>
       <Grid container spacing={4}>
-        {icons.map((item, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Link to={item.path} style={{ textDecoration: 'none' }}>
+        {icons.map((item, index) => {
+          const Icon = item.icon; // Ensure the icon component is capitalized
+          return (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <Link to={item.path} style={{ textDecoration: 'none' }}>
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  height: 200,
+                  minHeight: 150, // Usar minHeight en lugar de una altura fija
                   backgroundColor: '#46707e',
                   borderRadius: 2,
                   boxShadow: 3,
@@ -42,16 +49,20 @@ export const Dashboard: React.FC = () => {
                   '&:hover': {
                     backgroundColor: '#3b5c6b',
                   },
+                  padding: theme.spacing(2), // Aplica padding uniformemente alrededor del contenido
+                  paddingTop: theme.spacing(2), // Añade padding en la parte superior específicamente
+                  paddingBottom: theme.spacing(2) // Añade padding en la parte inferior específicamente
                 }}
-              >
-                {item.icon}
-                <Typography variant="h6" sx={{ mt: 2 }}>
+                >
+                <Icon sx={{ fontSize: iconSize }} />
+                <Typography variant="h6" sx={{ mt: 2, fontSize: isXSmall ? '0.875rem' : '1rem' }}>
                   {item.label}
                 </Typography>
               </Box>
-            </Link>
-          </Grid>
-        ))}
+              </Link>
+            </Grid>
+          );
+        })}
       </Grid>
     </Box>
   );

@@ -137,11 +137,11 @@ const CatalogoBFX: React.FC = () => {
         initialState={{
             pagination: {
               paginationModel: {
-                pageSize: 10,
+                pageSize: 25,
               },
             },
         }}
-        pageSizeOptions={[5,10,25]}
+        pageSizeOptions={[5,10,25,50,100]}
         pagination
       />
       <Modal open={openModal} onClose={handleCloseModal}>

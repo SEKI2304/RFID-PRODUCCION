@@ -4,7 +4,7 @@ import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
-import '../etiquetadobfx/etiquetadobfx.scss';
+import './etiquetadovaso_produccion.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
@@ -65,7 +65,7 @@ interface Printer {
   ip: string;
 }
 
-const EtiquetadoVaso: React.FC = () => {
+const EtiquetadoVaso_produccion: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -86,7 +86,6 @@ const EtiquetadoVaso: React.FC = () => {
   /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
-  const [numeroTarima, setNumeroTarima] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
   const [cantidadVasoPorCaja, setCantidadVasoPorCaja] = useState('');
@@ -158,17 +157,17 @@ const EtiquetadoVaso: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedOrden) {
+    if (selectedArea && selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado);
-          setUnidad(orden.unidad);
+          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
+          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
         }
       });
     }
-  }, [selectedOrden, selectedArea]);
+  }, [selectedArea, selectedOrden]);;
 
 useEffect(() => {
   const vasoPorCaja = parseInt(cantidadVasoPorCaja, 10) || 0;
@@ -188,18 +187,11 @@ useEffect(() => {
   };
 
   const resetForm = () => {
-    setSelectedArea(undefined);
-    setSelectedOrden(undefined);
-    setSelectedMaquina(undefined);
-    setSelectedTurno(undefined);
-    setSelectedOperador(undefined);
     setCantidadVasoPorCaja('');
     setCantidadCajas('');
     setTotalPiezas('');
     setPiezas(undefined);
-    setNumeroTarima('');
-    setUnidad('Piezas');
-    setDate('');
+    setUnidad('CAJAS');
 
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
@@ -230,19 +222,20 @@ useEffect(() => {
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
 
-    doc.setFontSize(56);
-    doc.text(`LOTE:${orden}`, 20, 167);
-    doc.text(`${fecha} `, 155, 167);
+    doc.setFontSize(40);
+    doc.text(`LOTE:${orden}`, 20, 161);
+    doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(80);
-    doc.text(`${cantidadCajas} CAJAS`, 80, 205);
+    doc.setFontSize(72);
+    doc.text(`${pesoNeto} KGM`, 5, 207);
+    doc.text(`${piezas} ${unidad}`, 140, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
-    doc.line(5, 175, 275, 175);
-  
+    doc.line(5, 167, 275, 167);
+    doc.line(135, 167, 135, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
@@ -254,51 +247,42 @@ useEffect(() => {
 
   const generateTrazabilidad = async () => {
     const base = '2';
-    const areaMap: { [key: string]: string } = {
-      'EXTRUSIÓN': '1',
-      'IMPRESIÓN': '2',
-      'REFILADO': '3',
-      'BOLSEO': '4',
-      'VASO': '5',
-      'POUCH': '6',
-      'LAMINADO 1': '7',
-      'CINTA': '8',
-      'DIGITAL': '9',
+    const areaMap: { [key: string]: string | undefined } = {
+      'EXTRUSIÓN': '1', 'IMPRESIÓN': '2', 'REFILADO': '3', 'BOLSEO': '4',
+      'VASO': '5', 'POUCH': '6', 'LAMINADO 1': '7', 'CINTA': '8', 'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    let areaCode = areaMap[selectedAreaName] || '0';
-    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
-    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
-    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.toString().padStart(6, '0') : '000000';
+    const areaCode = areaMap[selectedAreaName] || '0';
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
+    const maquinaCode = maquinaNo.toString().padStart(2, '0');
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
+    const ordenCode = ordenNo.toString().padStart(6, '0');
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
-    // Rellenando el número de tarima a tres dígitos
-    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
-
-    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
-    setTrazabilidad(fullTrazabilidad);
-    setRfid(`000${fullTrazabilidad}`);
-
-    // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
-      {/*  try {
+    try {
         const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
-        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
-        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
-        const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
+        // Asegurar que solo consideramos los que tienen exactamente la longitud esperada
+        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => 
+            label.trazabilidad.startsWith(partialTrazabilidad) && label.trazabilidad.length === 13
+        );
+        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => 
+            parseInt(label.trazabilidad.slice(-3))
+        );
+        const nextConsecutivo = (consecutivos.length > 0 ? Math.max(...consecutivos) : 0) + 1;
         const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
 
         const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
         setTrazabilidad(fullTrazabilidad);
-        setRfid(`0000${fullTrazabilidad}`);
-      } catch (error) {
+        setRfid(`000${fullTrazabilidad}`);
+    } catch (error) {
         console.error('Error fetching RfidLabel data:', error);
         setTrazabilidad(`${partialTrazabilidad}001`);
-        setRfid(`0000${partialTrazabilidad}001`);
-      }*/}
-  };
+        setRfid(`000${partialTrazabilidad}001`);
+    }
+};
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
@@ -352,9 +336,9 @@ useEffect(() => {
 
 
   return (
-    <div className='impresion-container-bfx'>
+    <div className='catalogo-bfx'>
       <Box className='top-container-bfx'>
-        <IconButton onClick={() => navigate('/modulosimpresion')} className='button-back'>
+        <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
@@ -372,7 +356,6 @@ useEffect(() => {
         }}
          />
           <Autocomplete
-            key={`area-${resetKey}`}
             value={areas.find(area => area.id === selectedArea)}
             onChange={(event, newValue) => setSelectedArea(newValue?.id)}
             options={areas}
@@ -381,7 +364,6 @@ useEffect(() => {
           />
 
           <Autocomplete
-            key={`orden-${resetKey}`}
             value={ordenes.find(o => o.id === selectedOrden)}
             onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
             options={ordenes}
@@ -389,7 +371,6 @@ useEffect(() => {
             renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
-            key={`maquina-${resetKey}`}
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}
               onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
               options={filteredMaquinas}
@@ -397,7 +378,6 @@ useEffect(() => {
               renderInput={(params) => <TextField {...params} label="Máquina" />}
             />
           <TextField
-              key={`producto-${resetKey}`}
               fullWidth
               label="Producto"
               value={filteredProductos} // Ahora es una string directa, no un array
@@ -408,7 +388,6 @@ useEffect(() => {
             />
 
             <Autocomplete
-              key={`turno-${resetKey}`}
               value={turnos.find(t => t.id === selectedTurno)}
               onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
               options={turnos}
@@ -417,7 +396,6 @@ useEffect(() => {
             />
 
             <Autocomplete
-              key={`operador-${resetKey}`}
               value={operadores.find(o => o.id === selectedOperador)}
               onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
               options={operadores}
@@ -455,17 +433,6 @@ useEffect(() => {
                 readOnly: true, // Hace el campo de sólo lectura
               }}
             />
-          <TextField
-              label="Número de Tarima"
-              value={numeroTarima}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Acepta solo números y limita a 3 caracteres.
-                if (/^\d{0,3}$/.test(value)) {
-                  setNumeroTarima(value);
-                }
-              }}
-          />
           <TextField
               label="Unidad"
               value={unidad} // Utiliza la variable de estado `unidad`
@@ -559,4 +526,4 @@ useEffect(() => {
   );
 }
 
-export default EtiquetadoVaso;
+export default EtiquetadoVaso_produccion;

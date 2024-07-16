@@ -1,13 +1,13 @@
+
+import { Autocomplete } from '@mui/material';
+import jsPDF from 'jspdf';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
-import './etiquetadobfx.scss';
-import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
-import { Autocomplete, createFilterOptions } from '@mui/material';
-import jsPDF from 'jspdf';
+import './etiquetadoquality_produccion.scss';
 
 interface Area {
   id: number;
@@ -62,7 +62,7 @@ interface Printer {
   ip: string;
 }
 
-const EtiquetadoBFX: React.FC = () => {
+const EtiquetadoQuality_produccion: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -83,10 +83,17 @@ const EtiquetadoBFX: React.FC = () => {
   /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
-  const [numeroTarima, setNumeroTarima] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
   const [resetKey, setResetKey] = useState(0);
+  const [traceabilityCode, setTraceabilityCode] = useState('');
+  const [qtyUOM, setQtyUOM] = useState<number | undefined>();
+  const [totalQtyPallet, setTotalQtyPallet] = useState<number | ''>('');
+  const [customer, setCustomer] = useState<string>('');
+  const [item, setItem] = useState<string>('');
+  const [qpsItemNumber, setQpsItemNumber] = useState<string>('');
+  const [lot, setLot] = useState<number | ''>('');
+  const [numeroTarimaGenerado, setNumeroTarimaGenerado] = useState('');
 
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
@@ -94,7 +101,7 @@ const EtiquetadoBFX: React.FC = () => {
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" }
   ];
-  
+
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const newPesoBruto = parseFloat(event.target.value);
     // Verifica que el nuevo peso bruto no sea menor que el peso neto existente.
@@ -174,18 +181,39 @@ const EtiquetadoBFX: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedArea && selectedOrden) {
+    if (selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
-          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          setFilteredProductos(productoConcatenado);
+          setItem(orden.producto);
+           setUnidad(orden.unidad || "default_unit");
         }
       });
     }
-  }, [selectedArea, selectedOrden]);
+  }, [selectedOrden, selectedArea]);
   
+
+  useEffect(() => {
+    const generateTraceabilityCode = () => {
+          const machine = filteredMaquinas.find(m => m.id === selectedMaquina);
+          const machineCode = machine ? machine.no.padStart(2, '0') : '00';
+
+          // Extrae los componentes de la fecha directamente de la cadena 'date'
+          const year = date.slice(0, 4);
+          const month = date.slice(5, 7);
+          const day = date.slice(8, 10);
+
+          const formattedDate = `${day}${month}${year.slice(-2)}`;
+          const formattedNumeroTarima = numeroTarimaGenerado;
+
+          const newTraceabilityCode = `${machineCode}${formattedDate}${formattedNumeroTarima}`;
+          setTraceabilityCode(newTraceabilityCode);
+      };
+
+      generateTraceabilityCode();
+  }, [selectedMaquina, date, numeroTarimaGenerado, filteredMaquinas]);
 
   const handleOpenModal = () => {
     {/*const today = new Date();
@@ -203,71 +231,56 @@ const EtiquetadoBFX: React.FC = () => {
 
   const generateTrazabilidad = async () => {
     const base = '2';
-    const areaMap: { [key: string]: string } = {
-      'EXTRUSIÓN': '1',
-      'IMPRESIÓN': '2',
-      'REFILADO': '3',
-      'BOLSEO': '4',
-      'VASO': '5',
-      'POUCH': '6',
-      'LAMINADO 1': '7',
-      'CINTA': '8',
-      'DIGITAL': '9',
+    const areaMap: { [key: string]: string | undefined } = {
+      'EXTRUSIÓN': '1', 'IMPRESIÓN': '2', 'REFILADO': '3', 'BOLSEO': '4',
+      'VASO': '5', 'POUCH': '6', 'LAMINADO 1': '7', 'CINTA': '8', 'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    let areaCode = areaMap[selectedAreaName] || '0';
-    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
-    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
-    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.toString().padStart(6, '0') : '000000';
+    const areaCode = areaMap[selectedAreaName] || '0';
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
+    const maquinaCode = maquinaNo.toString().padStart(2, '0');
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
+    const ordenCode = ordenNo.toString().padStart(6, '0');
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
-    // Rellenando el número de tarima a tres dígitos
-    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
-
-    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
-    setTrazabilidad(fullTrazabilidad);
-    setRfid(`000${fullTrazabilidad}`);
-
-    // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
-      {/*  try {
+    try {
         const response = await axios.get('http://172.16.10.31/api/RfidLabel');
         const rfidLabels = response.data;
 
-        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
-        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
-        const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
+        // Asegurar que solo consideramos los que tienen exactamente la longitud esperada
+        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => 
+            label.trazabilidad.startsWith(partialTrazabilidad) && label.trazabilidad.length === 13
+        );
+        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => 
+            parseInt(label.trazabilidad.slice(-3))
+        );
+        const nextConsecutivo = (consecutivos.length > 0 ? Math.max(...consecutivos) : 0) + 1;
         const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
 
         const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
         setTrazabilidad(fullTrazabilidad);
-        setRfid(`0000${fullTrazabilidad}`);
-      } catch (error) {
+        setRfid(`000${fullTrazabilidad}`);
+    } catch (error) {
         console.error('Error fetching RfidLabel data:', error);
         setTrazabilidad(`${partialTrazabilidad}001`);
-        setRfid(`0000${partialTrazabilidad}001`);
-      }*/}
-  };
+        setRfid(`000${partialTrazabilidad}001`);
+    }
+};
 
   const resetForm = () => {
-    setSelectedArea(undefined);
-    setSelectedOrden(undefined);
-    setSelectedMaquina(undefined);
-    setSelectedTurno(undefined);
-    setSelectedOperador(undefined);
     setPesoBruto(undefined);
     setPesoNeto(undefined);
     setPesoTarima(undefined);
     setPiezas(undefined);
-    setNumeroTarima('');
-    setUnidad('Piezas');
-    setDate('');
-
+    setUnidad('Cajas');
+    setQtyUOM(undefined);
+    setTotalQtyPallet('');
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
   const generatePDF = (data: EtiquetaData) => {
-    const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
+    const { claveProducto, nombreProducto, pesoBruto, orden, fecha} = data;
   
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -309,14 +322,15 @@ const EtiquetadoBFX: React.FC = () => {
     window.open(doc.output('bloburl'), '_blank');
   };
 
-
+  
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
         alert('Por favor, seleccione una impresora.');
         return;
     }
-    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
+    const url = `http://172.16.10.31/Printer/QualityPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
@@ -340,7 +354,17 @@ const EtiquetadoBFX: React.FC = () => {
       rfid: rfid,
       status: 1,
       uom: unidad,
-      fecha: date
+      fecha: date,
+      postExtraQuality: {
+        individualUnits: qtyUOM || 0,
+        itemDescription: item, // Tomado directamente del estado
+        itemNumber: qpsItemNumber,
+        totalUnits: totalQtyPallet || 0,
+        shippingUnits: piezas || 0,
+        inventoryLot: lot.toString(),
+        customer: customer,
+        traceability: traceabilityCode
+      }
     };
   
     axios.post(url, data)
@@ -349,30 +373,26 @@ const EtiquetadoBFX: React.FC = () => {
             resetForm();
             handleCloseModal();
             generatePDF(data);
+            // Si es necesario generar también el segundo PDF
         })
         .catch(error => {
             console.error('Error al generar la etiqueta:', error);
         });
   };
-  
-
-
 
 
   return (
-    <div>
+    <div className='impresion-container-quality'>
       <Box className='top-container-bfx'>
-        <IconButton onClick={() => navigate('/modulosimpresion')} className='button-back'>
+        <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
-      <div className='impresion-container-bfx'>
-      
-      <Box className='impresion-card-bfx' sx={{ pt: 8 }}>
+      <Box className='impresion-card-destiny'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          GENERACION ETIQUETA FORMATO BFX
+          GENERACION ETIQUETA FORMATO QUALITY
         </Typography>
-        <Box className='impresion-form-bfx'>
+        <Box className='impresion-form-destiny'>
         <TextField
         type="date"
         value={date}
@@ -381,7 +401,6 @@ const EtiquetadoBFX: React.FC = () => {
           shrink: true,
         }}/>
           <Autocomplete
-              key={`area-${resetKey}`}
               value={areas.find(area => area.id === selectedArea)}
               onChange={(event, newValue) => setSelectedArea(newValue?.id)}
               options={areas}
@@ -389,19 +408,13 @@ const EtiquetadoBFX: React.FC = () => {
               renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
           <Autocomplete
-              key={`orden-${resetKey}`}
               value={ordenes.find(o => o.id === selectedOrden)}
               onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
               options={ordenes}
               getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
-              filterOptions={createFilterOptions({
-                matchFrom: 'start',
-                stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
-              })}
               renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
-              key={`maquina-${resetKey}`}
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}
               onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
               options={filteredMaquinas}
@@ -409,7 +422,6 @@ const EtiquetadoBFX: React.FC = () => {
               renderInput={(params) => <TextField {...params} label="Máquina" />}
           />
           <TextField
-              key={`producto-${resetKey}`}
               fullWidth
               label="Producto"
               value={filteredProductos}
@@ -419,7 +431,6 @@ const EtiquetadoBFX: React.FC = () => {
               variant="outlined"
           />
             <Autocomplete
-                key={`turno-${resetKey}`}
                 value={turnos.find(t => t.id === selectedTurno)}
                 onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
                 options={turnos}
@@ -428,7 +439,6 @@ const EtiquetadoBFX: React.FC = () => {
             />
 
             <Autocomplete
-                key={`operador-${resetKey}`}
                 value={operadores.find(o => o.id === selectedOperador)}
                 onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
                 options={operadores}
@@ -464,26 +474,15 @@ const EtiquetadoBFX: React.FC = () => {
               value={pesoTarima}
               onChange={handlePesoTarimaChange}
           />
-
           <TextField
-              key={`piezas-${resetKey}`}
-              fullWidth
-              label="#"
-              variant="outlined"
-              type="number"
-              value={piezas}
-              onChange={e => setPiezas(parseFloat(e.target.value))}
-          />
-          <TextField
-              label="Número de Tarima"
-              value={numeroTarima}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Acepta solo números y limita a 3 caracteres.
-                if (/^\d{0,3}$/.test(value)) {
-                  setNumeroTarima(value);
-                }
-              }}
+            key={`piezas-${resetKey}`}
+            fullWidth
+            label="#"
+            variant="outlined"
+            type="number"
+            value={piezas || ''}
+            onChange={e => setPiezas(Math.max(0, parseFloat(e.target.value) || 0))}
+            inputProps={{ min: 0 }}
           />
           <TextField
               label="Unidad"
@@ -493,94 +492,149 @@ const EtiquetadoBFX: React.FC = () => {
               }}
               variant="outlined"
             />
+          <TextField
+            fullWidth
+            label="Customer"
+            variant="outlined"
+            value={customer}
+            onChange={e => setCustomer(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Item"
+            variant="outlined"
+            value={item}
+            onChange={e => setItem(e.target.value)}
+            InputProps={{
+                readOnly: true,
+            }}
+          />
+
+          <TextField
+            fullWidth
+            label="QPS ITEM#"
+            variant="outlined"
+            value={qpsItemNumber}
+            onChange={e => setQpsItemNumber(e.target.value)}
+          />
+
+          <TextField
+            fullWidth
+            label="Lot"
+            variant="outlined"
+            type="number"
+            value={lot}
+            onChange={e => setLot(Math.max(0, parseFloat(e.target.value) || 0))}
+            inputProps={{
+              min: 0, // Asegura que no se puedan ingresar números negativos
+            }}
+          />
+
+          <TextField
+            key={`qty-uom-${resetKey}`}
+            fullWidth
+            label="Qty/UOM(Eaches)"
+            variant="outlined"
+            type="number"
+            value={qtyUOM || ''}
+            onChange={e => setQtyUOM(Math.max(0, parseFloat(e.target.value) || 0))}
+            inputProps={{ min: 0 }}
+          />
+          <TextField
+            key={`total-qty-pallet-${resetKey}`}
+            fullWidth
+            label="Total Qty/Pallet"
+            variant="outlined"
+            type="number"
+            value={totalQtyPallet}
+            onChange={e => setTotalQtyPallet(Math.max(0, parseFloat(e.target.value) || 0))}
+            inputProps={{
+              min: 0 
+            }}
+          />
+          <TextField
+              fullWidth
+              label="TRACEABILITY CODE"
+              variant="outlined"
+              type="text"
+              value={traceabilityCode}
+              InputProps={{
+                readOnly: true,
+              }}
+            />
         </Box>
-        <Box className='impresion-button-bfx'>
+        <Box className='impresion-button-destiny'>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
             VISTA PREVIA
           </Button>
-        </Box>
+      </Box>
       </Box>
       <Modal open={openModal} onClose={handleCloseModal}>
-        <Paper className="bfx-modal-content">
-          <Box className="bfx-modal-header">
-            <Typography variant="h6">Vista Previa de la Etiqueta</Typography>
-            <IconButton onClick={handleCloseModal}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          <Box className="bfx-modal-body">
-          <div className="row">
-              <img src={EtiquetaImpresion} alt="" className="img-etiquetado" />
-            </div>
-            <div className="row">
-              <Typography><strong> PRODUCTO TERMINADO TARIMA</strong> </Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Área:</strong> {areas.find(a => a.id === selectedArea)?.area}</Typography>
-            </div>
-            <div className="row">
-            <Typography>
-              <strong>Fecha:</strong> {date}
-            </Typography>
-            </div>
-            <div className="row">
-            <Typography><strong>Producto:</strong> {filteredProductos}</Typography>
-            </div>
-            <div className="row"></div>
-            <div className="row">
-              <Typography><strong>Orden:</strong> {ordenes.find(o => o.id === selectedOrden)?.orden}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Máquina:</strong> {filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Turno:</strong> {turnos.find(t => t.id === selectedTurno)?.turno}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.numNomina} - {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Peso Bruto:</strong> {pesoBruto}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Peso Neto:</strong> {pesoNeto}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Peso Tarima:</strong> {pesoTarima}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>{unidad}:</strong> {piezas}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>Codigo de Trazabilidad:</strong> {trazabilidad}</Typography>
-            </div>
-            <div className="row">
-              <Typography><strong>OT Y/O LOTE:</strong> {ordenes.find(o => o.id === selectedOrden)?.orden}</Typography>
-            </div>
-          </Box>
-          <Box className="bfx-modal-footer">
-            <Autocomplete
-              value={selectedPrinter}
-              onChange={(event, newValue: Printer | null) => {
-                setSelectedPrinter(newValue);  // Directly set the new value
-              }}
-              options={printerOptions} // Ensure printerOptions is of type Printer[]
-              getOptionLabel={(option) => option.name}
-              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
-            />
-            <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
-              Guardar e Imprimir
-            </Button>
-          </Box>
+        <Paper className="quality-modal-content">
+            <Box className="quality-modal-header">
+                <Typography variant="h6">Detalle Etiqueta Quality</Typography>
+                <IconButton onClick={handleCloseModal}>
+                    <CloseIcon />
+                </IconButton>
+            </Box>
+            <Box className="quality-modal-body">
+                <div className="row">
+                    <Typography><strong>Customer:</strong></Typography>
+                    <Typography>{customer}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Item:</strong></Typography>
+                    <Typography>{item}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>QPS Item#:</strong></Typography>
+                    <Typography>{qpsItemNumber}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Lot:</strong></Typography>
+                    <Typography>{lot}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Total Qty/Pallet:</strong></Typography>
+                    <Typography>{totalQtyPallet}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Traceability Code:</strong></Typography>
+                    <Typography>{traceabilityCode}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Peso Bruto:</strong></Typography>
+                    <Typography>{pesoBruto}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Peso Neto:</strong></Typography>
+                    <Typography>{pesoNeto}</Typography>
+                </div>
+                <div className="row">
+                    <Typography><strong>Trazabilidad:</strong></Typography>
+                    <Typography>{trazabilidad}</Typography>
+                </div>
+            </Box>
+            <Box className="quality-modal-footer">
+              <Autocomplete
+                value={selectedPrinter}
+                onChange={(event, newValue) => {
+                    setSelectedPrinter(newValue);
+                }}
+                options={printerOptions}
+                getOptionLabel={(option) => option.name}
+                renderInput={(params) => <TextField {...params} label="Seleccione una impresora" fullWidth />}
+              />
+                <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
+                    Confirmar e Imprimir
+                </Button>
+            </Box>
         </Paper>
-      </Modal>
+    </Modal>
+
     </div>
-      <Box className='botttom-container-bfx'>
-      
-      </Box>
-    </div>
-    
   );
 };
 
-export default EtiquetadoBFX;
+export default EtiquetadoQuality_produccion;

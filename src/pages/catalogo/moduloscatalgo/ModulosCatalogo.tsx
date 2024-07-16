@@ -27,7 +27,7 @@ const ModulosCatalogo: React.FC = () => {
   return (
     <div className='modulos-catalogo'>
       <IconButton
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigate('/')}
         sx={{
           position: 'absolute',
           top: 16,

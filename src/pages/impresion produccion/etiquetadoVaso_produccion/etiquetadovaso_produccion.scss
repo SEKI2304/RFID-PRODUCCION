@@ -8,12 +8,15 @@ html, body, #root {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 10px;
-    position: relative;
-    width: 100%;
-    max-width: 98%;
-    margin: auto;
+    justify-content: center; /* Alineación al inicio para cuando hay scroll */
+    min-height: 100vh; /* Usa min-height en lugar de height para permitir que se expanda */
+    background-color: #f0f4f7;
+    overflow-x: hidden; /* Oculta el desbordamiento horizontal */
+    overflow-y: auto; /* Permite desplazamiento vertical cuando es necesario */
+    width: 100%; /* Asegura que ocupe todo el ancho disponible */
+    padding: 16px; /* Añade algo de padding general */
+    padding-bottom: 60px; /* Espacio adicional en la parte inferior para el footer */
+    box-sizing: border-box;/* Espacio adicional en la parte inferior para el footer */
 
     .back-button {
         position: absolute;
@@ -91,4 +94,12 @@ html, body, #root {
     .back-button {
         top: 10px; // Adjust position to fit smaller screens
     }
+}
+
+.top-container-bfx {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding-left: 16px; /* Espacio desde el borde izquierdo */
 }

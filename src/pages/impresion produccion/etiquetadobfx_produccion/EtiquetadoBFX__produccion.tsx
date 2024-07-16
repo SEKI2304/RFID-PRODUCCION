@@ -4,11 +4,10 @@ import { Box, Button, IconButton, MenuItem, Select, TextField, Typography, Modal
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
-import '../etiquetadobfx/etiquetadobfx.scss';
+import './etiquetadobfx_produccion.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
-import { Autocomplete } from '@mui/material';
+import { Autocomplete, createFilterOptions } from '@mui/material';
 import jsPDF from 'jspdf';
-
 
 interface Area {
   id: number;
@@ -44,12 +43,11 @@ interface Orden {
   claveProducto: string;
   producto: string;
   areaId: number;
+  unidad: string;
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
-  unidad: string;
 }
-
 interface EtiquetaData {
   claveProducto: string;
   nombreProducto: string;
@@ -57,15 +55,15 @@ interface EtiquetaData {
   pesoNeto: number;
   orden: string;
   fecha: string;
+  piezas: number;
 }
-
 
 interface Printer {
   name: string;
   ip: string;
 }
 
-const EtiquetadoVaso: React.FC = () => {
+const EtiquetadoBFX_produccion: React.FC = () => {
   const navigate = useNavigate();
   const [areas, setAreas] = useState<Area[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -86,13 +84,10 @@ const EtiquetadoVaso: React.FC = () => {
   /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
-  const [numeroTarima, setNumeroTarima] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
-  const [cantidadVasoPorCaja, setCantidadVasoPorCaja] = useState('');
-  const [cantidadCajas, setCantidadCajas] = useState('');
-  const [totalPiezas, setTotalPiezas] = useState('');
   const [resetKey, setResetKey] = useState(0);
+
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
@@ -100,6 +95,27 @@ const EtiquetadoVaso: React.FC = () => {
     { name: "Impresora 2", ip: "172.16.20.57" }
   ];
   
+  const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const newPesoBruto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso bruto no sea menor que el peso neto existente.
+    if (!isNaN(newPesoBruto) && (pesoNeto === undefined || newPesoBruto >= pesoNeto)) {
+      setPesoBruto(newPesoBruto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso bruto no puede ser menor que el peso neto.');
+    }
+  };
+
+  const handlePesoNetoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newPesoNeto = parseFloat(event.target.value);
+    // Verifica que el nuevo peso neto no sea mayor que el peso bruto existente.
+    if (!isNaN(newPesoNeto) && (pesoBruto === undefined || newPesoNeto <= pesoBruto)) {
+      setPesoNeto(newPesoNeto);
+    } else {
+      // Opcional: Manejo de errores o alertas aquí.
+      console.error('El peso neto no puede ser mayor que el peso bruto.');
+    }
+  };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   const value = parseFloat(event.target.value);
@@ -158,25 +174,18 @@ const EtiquetadoVaso: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedOrden) {
+    if (selectedArea && selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado);
-          setUnidad(orden.unidad);
+          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
+          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
         }
       });
     }
-  }, [selectedOrden, selectedArea]);
-
-useEffect(() => {
-  const vasoPorCaja = parseInt(cantidadVasoPorCaja, 10) || 0;
-  const cajas = parseInt(cantidadCajas, 10) || 0;
-  const total = vasoPorCaja * cajas;
-  setTotalPiezas(total.toString()); // Convert number to string before setting the state
-}, [cantidadVasoPorCaja, cantidadCajas]);
-
+  }, [selectedArea, selectedOrden]);
+  
   
 
   const handleOpenModal = () => {
@@ -187,25 +196,67 @@ useEffect(() => {
     setOpenModal(true);
   };
 
+  const handleCloseModal = () => setOpenModal(false);
+
+  const handleGenerateEtiqueta = () => {
+    handleOpenModal();
+  };
+
+  const generateTrazabilidad = async () => {
+    const base = '2';
+    const areaMap: { [key: string]: string | undefined } = {
+      'EXTRUSIÓN': '1', 'IMPRESIÓN': '2', 'REFILADO': '3', 'BOLSEO': '4',
+      'VASO': '5', 'POUCH': '6', 'LAMINADO 1': '7', 'CINTA': '8', 'DIGITAL': '9',
+    };
+
+    const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
+    const areaCode = areaMap[selectedAreaName] || '0';
+    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
+    const maquinaCode = maquinaNo.toString().padStart(2, '0');
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
+    const ordenCode = ordenNo.toString().padStart(6, '0');
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
+
+    try {
+        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
+        const rfidLabels = response.data;
+
+        // Asegurar que solo consideramos los que tienen exactamente la longitud esperada
+        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => 
+            label.trazabilidad.startsWith(partialTrazabilidad) && label.trazabilidad.length === 13
+        );
+        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => 
+            parseInt(label.trazabilidad.slice(-3))
+        );
+        const nextConsecutivo = (consecutivos.length > 0 ? Math.max(...consecutivos) : 0) + 1;
+        const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
+
+        const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
+        setTrazabilidad(fullTrazabilidad);
+        setRfid(`000${fullTrazabilidad}`);
+        
+    } catch (error) {
+        console.error('Error fetching RfidLabel data:', error);
+        setTrazabilidad(`${partialTrazabilidad}001`);
+        setRfid(`000${partialTrazabilidad}001`);
+    }
+};
+
+
+
+
+
   const resetForm = () => {
-    setSelectedArea(undefined);
-    setSelectedOrden(undefined);
-    setSelectedMaquina(undefined);
-    setSelectedTurno(undefined);
-    setSelectedOperador(undefined);
-    setCantidadVasoPorCaja('');
-    setCantidadCajas('');
-    setTotalPiezas('');
+    setPesoBruto(undefined);
+    setPesoNeto(undefined);
+    setPesoTarima(undefined);
     setPiezas(undefined);
-    setNumeroTarima('');
-    setUnidad('Piezas');
-    setDate('');
 
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
   const generatePDF = (data: EtiquetaData) => {
-    const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
+    const { claveProducto, nombreProducto, pesoBruto, orden, fecha, piezas } = data;
   
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -230,90 +281,38 @@ useEffect(() => {
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
 
-    doc.setFontSize(56);
-    doc.text(`LOTE:${orden}`, 20, 167);
-    doc.text(`${fecha} `, 155, 167);
+    doc.setFontSize(40);
+    doc.text(`LOTE:${orden}`, 20, 161);
+    doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(80);
-    doc.text(`${cantidadCajas} CAJAS`, 80, 205);
+    doc.setFontSize(72);
+    doc.text(`${pesoNeto} KGM`, 5, 207);
+    doc.text(`${piezas} ${unidad}`, 140, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
-    doc.line(5, 175, 275, 175);
-  
+    doc.line(5, 167, 275, 167);
+    doc.line(135, 167, 135, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
-  const handleCloseModal = () => setOpenModal(false);
 
-  const handleGenerateEtiqueta = () => {
-    handleOpenModal();
-  };
-
-  const generateTrazabilidad = async () => {
-    const base = '2';
-    const areaMap: { [key: string]: string } = {
-      'EXTRUSIÓN': '1',
-      'IMPRESIÓN': '2',
-      'REFILADO': '3',
-      'BOLSEO': '4',
-      'VASO': '5',
-      'POUCH': '6',
-      'LAMINADO 1': '7',
-      'CINTA': '8',
-      'DIGITAL': '9',
-    };
-
-    const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    let areaCode = areaMap[selectedAreaName] || '0';
-    const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no;
-    const maquinaCode = maquinaNo ? maquinaNo.toString().padStart(2, '0') : '00';
-    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden;
-    const ordenCode = ordenNo ? ordenNo.toString().padStart(6, '0') : '000000';
-
-    // Rellenando el número de tarima a tres dígitos
-    const formattedNumeroTarima = numeroTarima.padStart(3, '0');
-
-    const fullTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}${formattedNumeroTarima}`;
-    setTrazabilidad(fullTrazabilidad);
-    setRfid(`000${fullTrazabilidad}`);
-
-    // Aquí puedes añadir tu lógica para enviar los datos al servidor o API
-      {/*  try {
-        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
-        const rfidLabels = response.data;
-
-        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => label.trazabilidad.startsWith(partialTrazabilidad));
-        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => parseInt(label.trazabilidad.slice(9)));
-        const nextConsecutivo = consecutivos.length > 0 ? Math.max(...consecutivos) + 1 : 1;
-        const consecutivoStr = nextConsecutivo.toString().padStart(3, '0');
-
-        const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
-        setTrazabilidad(fullTrazabilidad);
-        setRfid(`0000${fullTrazabilidad}`);
-      } catch (error) {
-        console.error('Error fetching RfidLabel data:', error);
-        setTrazabilidad(`${partialTrazabilidad}001`);
-        setRfid(`0000${partialTrazabilidad}001`);
-      }*/}
-  };
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
         alert('Por favor, seleccione una impresora.');
         return;
     }
-    const url = `http://172.16.10.31/api/Vaso/PostPrintVaso?ip=${selectedPrinter.ip}`;
-
+    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
+    const producto = filteredProductos;
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
-
+  
     const data = {
       area: area || '',
       claveProducto: producto.split(' ')[0],
@@ -321,23 +320,18 @@ useEffect(() => {
       claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
       operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
       turno: turno || '',
-      pesoTarima:0,
-      pesoBruto:0,
-      pesoNeto:0,
-      piezas: 0,
+      pesoTarima: pesoTarima || 0,
+      pesoBruto: pesoBruto || 0,
+      pesoNeto: pesoNeto || 0,
+      piezas: piezas || 0,
       trazabilidad: trazabilidad,
       orden: orden || "",
       rfid: rfid,
       status: 1,
       uom: unidad,
-      fecha: date,
-      postExtraVasoDto: {
-        amountPerBox: cantidadVasoPorCaja,
-        boxes: cantidadCajas,
-        totalAmount:totalPiezas, 
-      }
+      fecha: date
     };
-
+  
     axios.post(url, data)
         .then(response => {
             console.log('Etiqueta generada:', response.data);
@@ -348,19 +342,24 @@ useEffect(() => {
         .catch(error => {
             console.error('Error al generar la etiqueta:', error);
         });
-};
+  };
+  
+
+
 
 
   return (
-    <div className='impresion-container-bfx'>
+    <div>
       <Box className='top-container-bfx'>
-        <IconButton onClick={() => navigate('/modulosimpresion')} className='button-back'>
+        <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
-      <Box className='impresion-card-bfx'>
+      <div className='impresion-container-bfx'>
+      
+      <Box className='impresion-card-bfx' sx={{ pt: 8 }}>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
-          GENERACION ETIQUETA FORMATO IMPRESION VASO
+          GENERACION ETIQUETA FORMATO BFX
         </Typography>
         <Box className='impresion-form-bfx'>
         <TextField
@@ -369,104 +368,96 @@ useEffect(() => {
         onChange={handleDateChange}
         InputLabelProps={{
           shrink: true,
-        }}
-         />
+        }}/>
           <Autocomplete
-            key={`area-${resetKey}`}
-            value={areas.find(area => area.id === selectedArea)}
-            onChange={(event, newValue) => setSelectedArea(newValue?.id)}
-            options={areas}
-            getOptionLabel={(option) => option.area}
-            renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
-          />
-
-          <Autocomplete
-            key={`orden-${resetKey}`}
-            value={ordenes.find(o => o.id === selectedOrden)}
-            onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-            options={ordenes}
-            getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " "+ option.producto}
-            renderInput={(params) => <TextField {...params} label="Orden" />}
+                value={areas.find(area => area.id === selectedArea)}
+              onChange={(event, newValue) => setSelectedArea(newValue?.id)}
+              options={areas}
+              getOptionLabel={(option) => option.area}
+              renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
           <Autocomplete
-            key={`maquina-${resetKey}`}
+              value={ordenes.find(o => o.id === selectedOrden)}
+              onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+              options={ordenes}
+              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
+              filterOptions={createFilterOptions({
+                matchFrom: 'start',
+                stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
+              })}
+              renderInput={(params) => <TextField {...params} label="Orden" />}
+          />
+          <Autocomplete
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}
               onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
               options={filteredMaquinas}
               getOptionLabel={(option) => option.maquina}
               renderInput={(params) => <TextField {...params} label="Máquina" />}
-            />
+          />
           <TextField
-              key={`producto-${resetKey}`}
               fullWidth
               label="Producto"
-              value={filteredProductos} // Ahora es una string directa, no un array
+              value={filteredProductos}
               InputProps={{
                 readOnly: true,
               }}
               variant="outlined"
+          />
+            <Autocomplete
+                value={turnos.find(t => t.id === selectedTurno)}
+                onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
+                options={turnos}
+                getOptionLabel={(option) => option.turno}
+                renderInput={(params) => <TextField {...params} label="Turno" />}
             />
 
             <Autocomplete
-              key={`turno-${resetKey}`}
-              value={turnos.find(t => t.id === selectedTurno)}
-              onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
-              options={turnos}
-              getOptionLabel={(option) => option.turno}
-              renderInput={(params) => <TextField {...params} label="Turno" />}
-            />
-
-            <Autocomplete
-              key={`operador-${resetKey}`}
-              value={operadores.find(o => o.id === selectedOperador)}
-              onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
-              options={operadores}
-              getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
-              renderInput={(params) => <TextField {...params} label="Operador" />}
+                value={operadores.find(o => o.id === selectedOperador)}
+                onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
+                options={operadores}
+                getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
+                renderInput={(params) => <TextField {...params} label="Operador" />}
             />
           <TextField
-            key={`cantvaso-${resetKey}`}
-            fullWidth
-            label="Cantidad Vaso Por Caja"
-            variant="outlined"
-            type="number"
-            value={cantidadVasoPorCaja}
-            onChange={e => setCantidadVasoPorCaja(e.target.value)}
-          />
-
-          <TextField
-            key={`cantidadcajas-${resetKey}`}
-            fullWidth
-            label="Cantidad Cajas"
-            variant="outlined"
-            type="number"
-            value={cantidadCajas}
-            onChange={e => setCantidadCajas(e.target.value)}
-          />
-
-          <TextField
+              key={`peso-bruto-${resetKey}`}
               fullWidth
-              label="Total de Piezas"
+              label="PESO BRUTO"
               variant="outlined"
               type="number"
-              value={totalPiezas}
-              onChange={e => setTotalPiezas(e.target.value)}
-              InputProps={{
-                readOnly: true, // Hace el campo de sólo lectura
-              }}
-            />
-          <TextField
-              label="Número de Tarima"
-              value={numeroTarima}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Acepta solo números y limita a 3 caracteres.
-                if (/^\d{0,3}$/.test(value)) {
-                  setNumeroTarima(value);
-                }
-              }}
+              value={pesoBruto}
+              onChange={handlePesoBrutoChange}
           />
+
           <TextField
+              key={`peso-neto-${resetKey}`}
+              fullWidth
+              label="PESO NETO"
+              variant="outlined"
+              type="number"
+              value={pesoNeto}
+              onChange={handlePesoNetoChange}
+          />
+
+          <TextField
+              key={`peso-tarima-${resetKey}`}
+              fullWidth
+              label="PESO TARIMA"
+              variant="outlined"
+              type="number"
+              value={pesoTarima}
+              onChange={handlePesoTarimaChange}
+          />
+
+          <TextField
+              key={`piezas-${resetKey}`}
+              fullWidth
+              label="#"
+              variant="outlined"
+              type="number"
+              value={piezas}
+              onChange={e => setPiezas(parseFloat(e.target.value))}
+          />
+            <TextField
               label="Unidad"
               value={unidad} // Utiliza la variable de estado `unidad`
               InputProps={{
@@ -474,6 +465,7 @@ useEffect(() => {
               }}
               variant="outlined"
             />
+
         </Box>
         <Box className='impresion-button-bfx'>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
@@ -494,7 +486,7 @@ useEffect(() => {
               <img src={EtiquetaImpresion} alt="" className="img-etiquetado" />
             </div>
             <div className="row">
-              <Typography><strong> PRODUCTO TERMINADO TARIMA VASO</strong> </Typography>
+              <Typography><strong> PRODUCTO TERMINADO TARIMA</strong> </Typography>
             </div>
             <div className="row">
               <Typography><strong>Área:</strong> {areas.find(a => a.id === selectedArea)?.area}</Typography>
@@ -521,13 +513,13 @@ useEffect(() => {
               <Typography><strong>Operador:</strong> {operadores.find(o => o.id === selectedOperador)?.numNomina} - {operadores.find(o => o.id === selectedOperador)?.nombreCompleto}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Vaso por Caja:</strong> {cantidadVasoPorCaja}</Typography>
+              <Typography><strong>Peso Bruto:</strong> {pesoBruto}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Cajas:</strong> {cantidadCajas}</Typography>
+              <Typography><strong>Peso Neto:</strong> {pesoNeto}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>Piezas:</strong> {totalPiezas}</Typography>
+              <Typography><strong>Peso Tarima:</strong> {pesoTarima}</Typography>
             </div>
             <div className="row">
               <Typography><strong>{unidad}:</strong> {piezas}</Typography>
@@ -556,7 +548,12 @@ useEffect(() => {
         </Paper>
       </Modal>
     </div>
+      <Box className='botttom-container-bfx'>
+      
+      </Box>
+    </div>
+    
   );
-}
+};
 
-export default EtiquetadoVaso;
+export default EtiquetadoBFX_produccion;

@@ -46,6 +46,7 @@ interface Orden {
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
+  unidad: string;
 }
 interface EtiquetaData {
   claveProducto: string;
@@ -187,10 +188,11 @@ const EtiquetadoQuality: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado);
           setItem(orden.producto);
+          setUnidad(orden.unidad);
         }
       });
     }
-  }, [selectedOrden, selectedArea]);
+  }, [selectedOrden, selectedArea]);  
   
 
   useEffect(() => {
@@ -282,7 +284,7 @@ const EtiquetadoQuality: React.FC = () => {
     setPesoTarima(undefined);
     setPiezas(undefined);
     setNumeroTarima('');
-    setUnidad('Cajas');
+    setUnidad('');
     setDate('');
     setCustomer('');
     setItem('');
@@ -321,23 +323,24 @@ const EtiquetadoQuality: React.FC = () => {
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
 
-    doc.setFontSize(56);
-    doc.text(`LOTE:${orden}`, 20, 167);
-    doc.text(`${fecha} `, 155, 167);
+    doc.setFontSize(40);
+    doc.text(`LOTE:${orden}`, 20, 161);
+    doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(80);
-    doc.text(`${pesoNeto} KGM`, 80, 205);
+    doc.setFontSize(72);
+    doc.text(`${pesoNeto} KGM`, 5, 207);
+    doc.text(`${piezas} ${unidad}`, 140, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
-    doc.line(5, 175, 275, 175);
-  
+    doc.line(5, 167, 275, 167);
+    doc.line(135, 167, 135, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
-
+  
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
@@ -398,12 +401,11 @@ const EtiquetadoQuality: React.FC = () => {
 
   return (
     <div className='impresion-container-quality'>
-      <IconButton
-        onClick={() => navigate('/modulosimpresion')}
-        sx={{ position: 'absolute', top: 16, left: 16 }}
-      >
-        <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
-      </IconButton>
+      <Box className='top-container-bfx'>
+        <IconButton onClick={() => navigate('/modulosimpresion')} className='button-back'>
+          <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
+        </IconButton>
+      </Box>
       <Box className='impresion-card-destiny'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO QUALITY
@@ -429,7 +431,7 @@ const EtiquetadoQuality: React.FC = () => {
               value={ordenes.find(o => o.id === selectedOrden)}
               onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
               options={ordenes}
-              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + option.producto}
+              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
               renderInput={(params) => <TextField {...params} label="Orden" />}
           />
           <Autocomplete
@@ -499,7 +501,7 @@ const EtiquetadoQuality: React.FC = () => {
           <TextField
             key={`piezas-${resetKey}`}
             fullWidth
-            label="# Piezas (Rollos, Bultos, Cajas)"
+            label="# "
             variant="outlined"
             type="number"
             value={piezas || ''}
@@ -517,15 +519,14 @@ const EtiquetadoQuality: React.FC = () => {
                 }
               }}
           />
-          <Select
-            label="Unidad"
-            value={unidad}
-            onChange={(e) => setUnidad(e.target.value)}
-            displayEmpty
-            fullWidth
-          >
-            <MenuItem value="Cajas">Cajas</MenuItem>
-          </Select>
+          <TextField
+              label="Unidad"
+              value={unidad} // Utiliza la variable de estado `unidad`
+              InputProps={{
+                readOnly: true, 
+              }}
+              variant="outlined"
+            />
           <TextField
             key={`customer-${resetKey}`}
             fullWidth

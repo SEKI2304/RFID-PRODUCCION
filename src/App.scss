@@ -1,8 +1,20 @@
 .App {
   text-align: center;
-  height: 100vh;       // Altura del 100% de la altura de la ventana del navegador
+  height: 100vh;
   overflow-y: auto;
-  padding-top: 60px; 
-  padding-bottom: 15px;
+  padding-top: 60px;  // asegura espacio en la parte superior
+    // espacio uniforme en la parte inferior
+  padding-bottom: 100px;  
 }
 
+.container-dashboard { 
+  padding-bottom: 60px;// Añade un poco de espacio alrededor del grid para evitar que los elementos toquen los bordes de la pantalla
+  overflow-x: hidden;
+}
+
+
+
+/* Selector más específico que .MuiBox-root */
+div.MuiBox-root.css-ukkfzu {
+  padding-bottom: 100px;
+}

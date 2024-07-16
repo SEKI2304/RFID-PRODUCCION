@@ -6,13 +6,13 @@ import BioflexImage from '../../../assets/bioflex.png';
 import DestinyImage from '../../../assets/destiny.png'; 
 import QualityImage from '../../../assets/quality.png';
 import ReymaImage from '../../../assets/Reyma.png';
-import './modulosimpresion.scss';
+import './modulosimpresion_produccion.scss';
 
 const modules = [
-  { image: BioflexImage, label: 'BIOFLEX', path: '/impresionBFX' },
-  { image: DestinyImage, label: 'DESTINY', path: '/impresionDestiny' },
-  { image: QualityImage, label: 'QUALITY', path: '/impresionQuality' },
-  { image: ReymaImage, label: 'VASO', path: '/impresionVaso' },
+  { image: BioflexImage, label: 'BIOFLEX', path: '/ImpresionTarimaBFX' },
+  { image: DestinyImage, label: 'DESTINY', path: '/ImpresionTarimaDestiny' },
+  { image: QualityImage, label: 'QUALITY', path: '/ImpresionTarimaQuality' },
+  { image: ReymaImage, label: 'VASO', path: '/ImpresionTarimaVaso' },
 ];
 
 {/*const modules2 = [
