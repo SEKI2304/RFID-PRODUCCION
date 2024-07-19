@@ -8,6 +8,7 @@ import './etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 import jsPDF from 'jspdf';
+import Swal from 'sweetalert2';
 
 interface Area {
   id: number;
@@ -47,6 +48,7 @@ interface Orden {
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
+  claveUnidad:string;
 }
 interface EtiquetaData {
   claveProducto: string;
@@ -85,6 +87,7 @@ const EtiquetadoBFX: React.FC = () => {
   const [rfid, setRfid] = useState<string>('');
   const [numeroTarima, setNumeroTarima] = useState('');
   const [unidad, setUnidad] = useState('Piezas');
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');// AGREGAR A LAS OTRAS VISTAS
   const [date, setDate] = useState('');
   const [resetKey, setResetKey] = useState(0);
 
@@ -92,7 +95,8 @@ const EtiquetadoBFX: React.FC = () => {
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
   
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,15 +122,16 @@ const EtiquetadoBFX: React.FC = () => {
   };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value <= 30) {
+    const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 52) {
       setPesoTarima(value);
     } else {
-      console.error('El valor no puede ser mayor que 30.');
-      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
-      setPesoTarima(Math.min(value, 30));
+      console.error('El valor debe estar entre 0 y 52.');
+      // Aquí puedes elegir restablecer el valor al mínimo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.max(Math.min(value, 52), 0));
     }
   };
+  
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Assuming you want to keep the date in 'yyyy-MM-dd' format in the state
@@ -181,10 +186,16 @@ const EtiquetadoBFX: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Establece el producto concatenado
           setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
         }
       });
     }
-  }, [selectedArea, selectedOrden]);
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
+
   
 
   const handleOpenModal = () => {
@@ -266,7 +277,7 @@ const EtiquetadoBFX: React.FC = () => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
+  const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
     const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
     const doc = new jsPDF({
@@ -296,16 +307,18 @@ const EtiquetadoBFX: React.FC = () => {
     doc.text(`LOTE:${orden}`, 20, 161);
     doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(72);
-    doc.text(`${pesoNeto} KGM`, 5, 207);
-    doc.text(`${piezas} ${unidad}`, 140, 207);
+    doc.text(`KGM`, 80, 180);
+
+    doc.setFontSize(80);
+    doc.text(`${pesoNeto}`, 5, 207);
+    doc.text(`${piezas} ${claveUnidad}`, 122, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
     doc.line(5, 167, 275, 167);
-    doc.line(135, 167, 135, 210);
+    doc.line(117, 167, 117, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
@@ -313,48 +326,92 @@ const EtiquetadoBFX: React.FC = () => {
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
-        alert('Por favor, seleccione una impresora.');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Impresora no seleccionada',
+            text: 'Por favor, seleccione una impresora.',
+        });
         return;
     }
-    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
     const area = areas.find(a => a.id === selectedArea)?.area;
     const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
     const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
     const producto = filteredProductos;
     const turno = turnos.find(t => t.id === selectedTurno)?.turno;
     const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
-  
+
     const data = {
-      area: area || '',
-      claveProducto: producto.split(' ')[0],
-      nombreProducto: producto.split(' ').slice(1).join(' '),
-      claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
-      operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
-      turno: turno || '',
-      pesoTarima: pesoTarima || 0,
-      pesoBruto: pesoBruto || 0,
-      pesoNeto: pesoNeto || 0,
-      piezas: piezas || 0,
-      trazabilidad: trazabilidad,
-      orden: orden || "",
-      rfid: rfid,
-      status: 1,
-      uom: unidad,
-      fecha: date
+        area: area || '',
+        claveProducto: producto.split(' ')[0],
+        nombreProducto: producto.split(' ').slice(1).join(' '),
+        claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
+        operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
+        turno: turno || '',
+        pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
+        pesoBruto: pesoBruto || 0,
+        pesoNeto: pesoNeto || 0,
+        piezas: piezas || 0,
+        trazabilidad: trazabilidad,
+        orden: orden || "",
+        rfid: rfid,
+        status: 1,
+        uom: unidad,
+        fecha: date
     };
+
+    // Validación de campos requeridos
+    const requiredFields = [
+      { name: 'Área', value: data.area },
+      { name: 'Clave de Producto', value: data.claveProducto },
+      { name: 'Nombre de Producto', value: data.nombreProducto },
+      { name: 'Clave de Operador', value: data.claveOperador },
+      { name: 'Operador', value: data.operador },
+      { name: 'Turno', value: data.turno },
+      { name: 'Peso Tarima', value: data.pesoTarima },
+      { name: 'Peso Bruto', value: data.pesoBruto },
+      { name: 'Peso Neto', value: data.pesoNeto },
+      { name: 'Piezas', value: data.piezas },
+      { name: 'Orden', value: data.orden },
+      { name: 'RFID', value: data.rfid },
+      { name: 'UOM', value: data.uom },
+      { name: 'Fecha', value: data.fecha }
+  ];
   
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
+  
+  if (emptyFields.length > 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Campos incompletos',
+          text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+      });
+      return;
+  }
+  
+
+    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
     axios.post(url, data)
         .then(response => {
-            console.log('Etiqueta generada:', response.data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Etiqueta generada',
+                text: 'La etiqueta se ha generado correctamente.',
+            });
             resetForm();
             handleCloseModal();
             generatePDF(data);
         })
         .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Hubo un error al generar la etiqueta.',
+            });
             console.error('Error al generar la etiqueta:', error);
         });
-  };
-  
+};
 
 
 
@@ -500,7 +557,7 @@ const EtiquetadoBFX: React.FC = () => {
           </Button>
         </Box>
       </Box>
-      <Modal open={openModal} onClose={handleCloseModal}>
+      <Modal open={openModal} onClose={handleCloseModal} style={{ zIndex: 1050 }}>
         <Paper className="bfx-modal-content">
           <Box className="bfx-modal-header">
             <Typography variant="h6">Vista Previa de la Etiqueta</Typography>
@@ -566,8 +623,26 @@ const EtiquetadoBFX: React.FC = () => {
               }}
               options={printerOptions} // Ensure printerOptions is of type Printer[]
               getOptionLabel={(option) => option.name}
-              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
             />
+
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir
             </Button>

@@ -65,7 +65,7 @@ const CatalogoBFX: React.FC = () => {
       fecha: row.fecha // Considera si necesitas transformar el formato de la fecha para el backend
     };
   
-    axios.post(`http://172.16.10.31/Printer/SendSATOCommandNoSave`, postData)
+    axios.post(`http://172.16.10.31/Printer/BfxPrinterIP?ip=172.16.20.58`, postData)
       .then(response => {
         console.log('Impresión iniciada:', response.data);
         // Puedes manejar la respuesta de éxito aquí, como mostrar un mensaje de éxito.

@@ -47,6 +47,7 @@ interface Orden {
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
+  claveUnidad:string;
 }
 interface EtiquetaData {
   claveProducto: string;
@@ -60,6 +61,10 @@ interface EtiquetaData {
 interface Printer {
   name: string;
   ip: string;
+}
+
+interface RfidLabel {
+  trazabilidad: string;
 }
 
 const EtiquetadoQuality_produccion: React.FC = () => {
@@ -94,12 +99,14 @@ const EtiquetadoQuality_produccion: React.FC = () => {
   const [qpsItemNumber, setQpsItemNumber] = useState<string>('');
   const [lot, setLot] = useState<number | ''>('');
   const [numeroTarimaGenerado, setNumeroTarimaGenerado] = useState('');
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');
 
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
 
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,13 +132,13 @@ const EtiquetadoQuality_produccion: React.FC = () => {
   };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value <= 30) {
+    const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 52) {
       setPesoTarima(value);
     } else {
-      console.error('El valor no puede ser mayor que 30.');
-      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
-      setPesoTarima(Math.min(value, 30));
+      console.error('El valor debe estar entre 0 y 52.');
+      // Aquí puedes elegir restablecer el valor al mínimo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.max(Math.min(value, 52), 0));
     }
   };
 
@@ -181,19 +188,23 @@ const EtiquetadoQuality_produccion: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedOrden) {
+    if (selectedArea && selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado);
+          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
+          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
           setItem(orden.producto);
-           setUnidad(orden.unidad || "default_unit");
         }
       });
     }
-  }, [selectedOrden, selectedArea]);
-  
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
 
   useEffect(() => {
     const generateTraceabilityCode = () => {
@@ -219,7 +230,7 @@ const EtiquetadoQuality_produccion: React.FC = () => {
     {/*const today = new Date();
     const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
     setCurrentDate(formattedDate);*/}
-    generateTrazabilidad(); // Generar trazabilidad y RFID antes de abrir el modal
+    generateBothCodes();// Generar trazabilidad y RFID antes de abrir el modal
     setOpenModal(true);
   };
 
@@ -231,13 +242,13 @@ const EtiquetadoQuality_produccion: React.FC = () => {
 
   const generateTrazabilidad = async () => {
     const base = '2';
-    const areaMap: { [key: string]: string | undefined } = {
+    const areaMap: { [key: string]: string } = {
       'EXTRUSIÓN': '1', 'IMPRESIÓN': '2', 'REFILADO': '3', 'BOLSEO': '4',
       'VASO': '5', 'POUCH': '6', 'LAMINADO 1': '7', 'CINTA': '8', 'DIGITAL': '9',
     };
 
     const selectedAreaName = areas.find(a => a.id === selectedArea)?.area || '';
-    const areaCode = areaMap[selectedAreaName] || '0';
+    const areaCode = areaMap[selectedAreaName as keyof typeof areaMap] || '0';
     const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
     const maquinaCode = maquinaNo.toString().padStart(2, '0');
     const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
@@ -245,14 +256,13 @@ const EtiquetadoQuality_produccion: React.FC = () => {
     const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
 
     try {
-        const response = await axios.get('http://172.16.10.31/api/RfidLabel');
-        const rfidLabels = response.data;
+        const response = await axios.get<RfidLabel[]>('http://172.16.10.31/api/RfidLabel');
+        const rfidLabels: RfidLabel[] = response.data;
 
-        // Asegurar que solo consideramos los que tienen exactamente la longitud esperada
-        const matchedLabels = rfidLabels.filter((label: { trazabilidad: string }) => 
+        const matchedLabels = rfidLabels.filter((label: RfidLabel) => 
             label.trazabilidad.startsWith(partialTrazabilidad) && label.trazabilidad.length === 13
         );
-        const consecutivos = matchedLabels.map((label: { trazabilidad: string }) => 
+        const consecutivos = matchedLabels.map((label: RfidLabel) => 
             parseInt(label.trazabilidad.slice(-3))
         );
         const nextConsecutivo = (consecutivos.length > 0 ? Math.max(...consecutivos) : 0) + 1;
@@ -261,11 +271,33 @@ const EtiquetadoQuality_produccion: React.FC = () => {
         const fullTrazabilidad = `${partialTrazabilidad}${consecutivoStr}`;
         setTrazabilidad(fullTrazabilidad);
         setRfid(`000${fullTrazabilidad}`);
+
+        return consecutivoStr; // Devuelve el valor de consecutivoStr
     } catch (error) {
         console.error('Error fetching RfidLabel data:', error);
-        setTrazabilidad(`${partialTrazabilidad}001`);
-        setRfid(`000${partialTrazabilidad}001`);
+        const defaultConsecutivo = '001';
+        setTrazabilidad(`${partialTrazabilidad}${defaultConsecutivo}`);
+        setRfid(`000${partialTrazabilidad}${defaultConsecutivo}`);
+
+        return defaultConsecutivo; // Devuelve el valor por defecto
     }
+};
+
+const generateBothCodes = async () => {
+    const consecutivoStr = await generateTrazabilidad();
+    
+    const machine = filteredMaquinas.find(m => m.id === selectedMaquina);
+    const machineCode = machine ? machine.no.padStart(2, '0') : '00';
+
+    const year = date.slice(0, 4);
+    const month = date.slice(5, 7);
+    const day = date.slice(8, 10);
+
+    const formattedDate = `${day}${month}${year.slice(-2)}`;
+    const formattedNumeroTarima = consecutivoStr;
+
+    const newTraceabilityCode = `${machineCode}${formattedDate}${formattedNumeroTarima}`;
+    setTraceabilityCode(newTraceabilityCode);
 };
 
   const resetForm = () => {
@@ -279,8 +311,8 @@ const EtiquetadoQuality_produccion: React.FC = () => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
-    const { claveProducto, nombreProducto, pesoBruto, orden, fecha} = data;
+  const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
+    const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
     const doc = new jsPDF({
       orientation: 'landscape',
@@ -309,19 +341,20 @@ const EtiquetadoQuality_produccion: React.FC = () => {
     doc.text(`LOTE:${orden}`, 20, 161);
     doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(72);
-    doc.text(`${pesoNeto} KGM`, 5, 207);
-    doc.text(`${piezas} ${unidad}`, 140, 207);
+    doc.text(`KGM`, 80, 180);
+
+    doc.setFontSize(80);
+    doc.text(`${pesoNeto}`, 5, 207);
+    doc.text(`${piezas} ${claveUnidad}`, 122, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
     doc.line(5, 167, 275, 167);
-    doc.line(135, 167, 135, 210);
+    doc.line(117, 167, 117, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
-
   
 
   const handleConfirmEtiqueta = () => {
@@ -349,7 +382,7 @@ const EtiquetadoQuality_produccion: React.FC = () => {
       claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
       operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
       turno: turno || '',
-      pesoTarima: pesoTarima || 0,
+      pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
       pesoBruto: pesoBruto || 0,
       pesoNeto: pesoNeto || 0,
       piezas: piezas || 0,
@@ -397,7 +430,7 @@ const EtiquetadoQuality_produccion: React.FC = () => {
       { name: 'Traceability', value: data.postExtraQuality.traceability }
   ];
 
-    const emptyFields = requiredFields.filter(field => !field.value);
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
 
   if (emptyFields.length > 0) {
       Swal.fire({
@@ -666,15 +699,32 @@ const EtiquetadoQuality_produccion: React.FC = () => {
                 </div>
             </Box>
             <Box className="quality-modal-footer">
-              <Autocomplete
-                value={selectedPrinter}
-                onChange={(event, newValue) => {
-                    setSelectedPrinter(newValue);
-                }}
-                options={printerOptions}
-                getOptionLabel={(option) => option.name}
-                renderInput={(params) => <TextField {...params} label="Seleccione una impresora" fullWidth />}
-              />
+            <Autocomplete
+              value={selectedPrinter}
+              onChange={(event, newValue: Printer | null) => {
+                setSelectedPrinter(newValue);  // Directly set the new value
+              }}
+              options={printerOptions} // Ensure printerOptions is of type Printer[]
+              getOptionLabel={(option) => option.name}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
+            />
                 <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
                     Confirmar e Imprimir
                 </Button>

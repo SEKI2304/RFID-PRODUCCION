@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadoquality.scss';
-
+import Swal from 'sweetalert2';
 interface Area {
   id: number;
   area: string;
@@ -47,6 +47,7 @@ interface Orden {
   itemDescription?: string;
   itemNumber?: string;
   unidad: string;
+  claveUnidad:string;
 }
 interface EtiquetaData {
   claveProducto: string;
@@ -94,12 +95,13 @@ const EtiquetadoQuality: React.FC = () => {
   const [item, setItem] = useState<string>('');
   const [qpsItemNumber, setQpsItemNumber] = useState<string>('');
   const [lot, setLot] = useState<number | ''>('');
-
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
 
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,13 +127,13 @@ const EtiquetadoQuality: React.FC = () => {
   };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value <= 30) {
+    const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 52) {
       setPesoTarima(value);
     } else {
-      console.error('El valor no puede ser mayor que 30.');
-      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
-      setPesoTarima(Math.min(value, 30));
+      console.error('El valor debe estar entre 0 y 52.');
+      // Aquí puedes elegir restablecer el valor al mínimo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.max(Math.min(value, 52), 0));
     }
   };
 
@@ -181,18 +183,23 @@ const EtiquetadoQuality: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedOrden) {
+    if (selectedArea && selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado);
+          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
+          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
           setItem(orden.producto);
-          setUnidad(orden.unidad);
         }
       });
     }
-  }, [selectedOrden, selectedArea]);  
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
   
 
   useEffect(() => {
@@ -297,7 +304,7 @@ const EtiquetadoQuality: React.FC = () => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
+  const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
     const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
     const doc = new jsPDF({
@@ -327,16 +334,18 @@ const EtiquetadoQuality: React.FC = () => {
     doc.text(`LOTE:${orden}`, 20, 161);
     doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(72);
-    doc.text(`${pesoNeto} KGM`, 5, 207);
-    doc.text(`${piezas} ${unidad}`, 140, 207);
+    doc.text(`KGM`, 80, 180);
+
+    doc.setFontSize(80);
+    doc.text(`${pesoNeto}`, 5, 207);
+    doc.text(`${piezas} ${claveUnidad}`, 122, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
     doc.line(5, 167, 275, 167);
-    doc.line(135, 167, 135, 210);
+    doc.line(117, 167, 117, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
@@ -344,9 +353,13 @@ const EtiquetadoQuality: React.FC = () => {
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
-        alert('Por favor, seleccione una impresora.');
-        return;
-    }
+      Swal.fire({
+          icon: 'warning',
+          title: 'Impresora no seleccionada',
+          text: 'Por favor, seleccione una impresora.',
+      });
+      return;
+  }
 
     const url = `http://172.16.10.31/Printer/QualityPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -363,7 +376,7 @@ const EtiquetadoQuality: React.FC = () => {
       claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
       operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
       turno: turno || '',
-      pesoTarima: pesoTarima || 0,
+      pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
       pesoBruto: pesoBruto || 0,
       pesoNeto: pesoNeto || 0,
       piezas: piezas || 0,
@@ -384,16 +397,61 @@ const EtiquetadoQuality: React.FC = () => {
         traceability: traceabilityCode
       }
     };
-  
+    
+    const requiredFields = [
+      { name: 'Área', value: data.area },
+      { name: 'Clave de Producto', value: data.claveProducto },
+      { name: 'Nombre de Producto', value: data.nombreProducto },
+      { name: 'Clave de Operador', value: data.claveOperador },
+      { name: 'Operador', value: data.operador },
+      { name: 'Turno', value: data.turno },
+      { name: 'Peso Tarima', value: data.pesoTarima },
+      { name: 'Peso Bruto', value: data.pesoBruto },
+      { name: 'Peso Neto', value: data.pesoNeto },
+      { name: 'Piezas', value: data.piezas },
+      { name: 'Trazabilidad', value: data.trazabilidad },
+      { name: 'Orden', value: data.orden },
+      { name: 'RFID', value: data.rfid },
+      { name: 'UOM', value: data.uom },
+      { name: 'Fecha', value: data.fecha },
+      { name: 'Individual Units', value: data.postExtraQuality.individualUnits },
+      { name: 'Item Description', value: data.postExtraQuality.itemDescription },
+      { name: 'Item Number', value: data.postExtraQuality.itemNumber },
+      { name: 'Total Units', value: data.postExtraQuality.totalUnits },
+      { name: 'Shipping Units', value: data.postExtraQuality.shippingUnits },
+      { name: 'Inventory Lot', value: data.postExtraQuality.inventoryLot },
+      { name: 'Customer', value: data.postExtraQuality.customer },
+      { name: 'Traceability', value: data.postExtraQuality.traceability }
+  ];
+
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
+
+  if (emptyFields.length > 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Campos incompletos',
+          text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+      });
+      return;
+  }
+
     axios.post(url, data)
         .then(response => {
-            console.log('Etiqueta generada:', response.data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Etiqueta generada',
+                text: 'La etiqueta se ha generado correctamente.',
+            });
             resetForm();
             handleCloseModal();
             generatePDF(data);
-            // Si es necesario generar también el segundo PDF
         })
         .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Hubo un error al generar la etiqueta.',
+            });
             console.error('Error al generar la etiqueta:', error);
         });
   };
@@ -610,7 +668,7 @@ const EtiquetadoQuality: React.FC = () => {
           </Button>
         </Box>
       </Box>
-      <Modal open={openModal} onClose={handleCloseModal}>
+      <Modal open={openModal} onClose={handleCloseModal} style={{ zIndex: 1050 }}>
         <Paper className="quality-modal-content">
             <Box className="quality-modal-header">
                 <Typography variant="h6">Detalle Etiqueta Quality</Typography>
@@ -657,15 +715,32 @@ const EtiquetadoQuality: React.FC = () => {
                 </div>
             </Box>
             <Box className="quality-modal-footer">
-              <Autocomplete
-                value={selectedPrinter}
-                onChange={(event, newValue) => {
-                    setSelectedPrinter(newValue);
-                }}
-                options={printerOptions}
-                getOptionLabel={(option) => option.name}
-                renderInput={(params) => <TextField {...params} label="Seleccione una impresora" fullWidth />}
-              />
+            <Autocomplete
+              value={selectedPrinter}
+              onChange={(event, newValue: Printer | null) => {
+                setSelectedPrinter(newValue);  // Directly set the new value
+              }}
+              options={printerOptions} // Ensure printerOptions is of type Printer[]
+              getOptionLabel={(option) => option.name}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
+            />
                 <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
                     Confirmar e Imprimir
                 </Button>

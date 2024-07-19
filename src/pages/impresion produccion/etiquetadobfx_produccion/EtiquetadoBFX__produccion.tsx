@@ -48,6 +48,7 @@ interface Orden {
   customerPO?: string;
   itemDescription?: string;
   itemNumber?: string;
+  claveUnidad:string;
 }
 interface EtiquetaData {
   claveProducto: string;
@@ -88,12 +89,14 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   const [unidad, setUnidad] = useState('Piezas');
   const [date, setDate] = useState('');
   const [resetKey, setResetKey] = useState(0);
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');
 
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
   
   const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,13 +122,13 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const value = parseFloat(event.target.value);
-    if (!isNaN(value) && value <= 30) {
+    const value = parseFloat(event.target.value);
+    if (!isNaN(value) && value >= 0 && value <= 52) {
       setPesoTarima(value);
     } else {
-      console.error('El valor no puede ser mayor que 30.');
-      // Aquí puedes elegir restablecer el valor al máximo permitido o simplemente ignorar la entrada.
-      setPesoTarima(Math.min(value, 30));
+      console.error('El valor debe estar entre 0 y 52.');
+      // Aquí puedes elegir restablecer el valor al mínimo permitido o simplemente ignorar la entrada.
+      setPesoTarima(Math.max(Math.min(value, 52), 0));
     }
   };
 
@@ -182,10 +185,15 @@ const EtiquetadoBFX_produccion: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Establece el producto concatenado
           setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
         }
       });
     }
-  }, [selectedArea, selectedOrden]);
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
   
   
 
@@ -243,10 +251,6 @@ const EtiquetadoBFX_produccion: React.FC = () => {
     }
 };
 
-
-
-
-
   const resetForm = () => {
     setPesoBruto(undefined);
     setPesoNeto(undefined);
@@ -256,48 +260,68 @@ const EtiquetadoBFX_produccion: React.FC = () => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
-    const { claveProducto, nombreProducto, pesoBruto, orden, fecha, piezas } = data;
-  
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'letter'  // Puedes ajustar el tamaño de página según necesites
+  const resetValores = () => {
+    setPiezas(0);
+    setUnidad('');
+    setDate('');
+    setSelectedArea(undefined);
+    setSelectedOrden(undefined);
+    setSelectedMaquina(undefined);
+    setSelectedTurno(undefined);
+    setSelectedOperador(undefined);
+    setFilteredProductos('');
+    setPesoBruto(undefined);
+    setPesoNeto(undefined);
+    setPesoTarima(undefined);
+
+    setResetKey(prevKey => prevKey + 1);
+};
+
+
+const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
+  const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
+
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'letter'  // Puedes ajustar el tamaño de página según necesites
+  });
+
+  // Función para dividir y ajustar texto largo en varias líneas
+  const splitText = (text: string, x: number, y: number, fontSize: number, maxWidth: number): number => {
+    doc.setFontSize(fontSize);
+    const lines: string[] = doc.splitTextToSize(text, maxWidth); // Divide el texto para que se ajuste al ancho máximo
+    lines.forEach((line: string) => {  // Aquí se especifica el tipo de 'line' como 'string'
+      doc.text(line, x, y);
+      y += fontSize * 0.4; // Aumentar 'y' para la siguiente línea basada en el tamaño de la fuente
     });
-  
-    // Función para dividir y ajustar texto largo en varias líneas
-    const splitText = (text: string, x: number, y: number, fontSize: number, maxWidth: number): number => {
-      doc.setFontSize(fontSize);
-      const lines: string[] = doc.splitTextToSize(text, maxWidth); // Divide el texto para que se ajuste al ancho máximo
-      lines.forEach((line: string) => {  // Aquí se especifica el tipo de 'line' como 'string'
-        doc.text(line, x, y);
-        y += fontSize * 0.4; // Aumentar 'y' para la siguiente línea basada en el tamaño de la fuente
-      });
-      return y; // Retorna la nueva posición 'y' después de las líneas
-    };
-  
-    doc.setFontSize(150);
-    doc.text(`${claveProducto}`, 25, 45);
-
-    let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
-    currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
-
-    doc.setFontSize(40);
-    doc.text(`LOTE:${orden}`, 20, 161);
-    doc.text(`${fecha} `, 155, 161);
-
-    doc.setFontSize(72);
-    doc.text(`${pesoNeto} KGM`, 5, 207);
-    doc.text(`${piezas} ${unidad}`, 140, 207);
-
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.5);
-    doc.line(5, 55, 275, 55);
-    doc.line(5, 145, 275, 145);
-    doc.line(5, 167, 275, 167);
-    doc.line(135, 167, 135, 210);
-    window.open(doc.output('bloburl'), '_blank');
+    return y; // Retorna la nueva posición 'y' después de las líneas
   };
+
+  doc.setFontSize(150);
+  doc.text(`${claveProducto}`, 25, 45);
+
+  let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
+  currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
+
+  doc.setFontSize(40);
+  doc.text(`LOTE:${orden}`, 20, 161);
+  doc.text(`${fecha} `, 155, 161);
+
+  doc.text(`KGM`, 80, 180);
+
+  doc.setFontSize(80);
+  doc.text(`${pesoNeto}`, 5, 207);
+  doc.text(`${piezas} ${claveUnidad}`, 122, 207);
+
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(5, 55, 275, 55);
+  doc.line(5, 145, 275, 145);
+  doc.line(5, 167, 275, 167);
+  doc.line(117, 167, 117, 210);
+  window.open(doc.output('bloburl'), '_blank');
+};
 
 
 
@@ -325,7 +349,7 @@ const EtiquetadoBFX_produccion: React.FC = () => {
         claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
         operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
         turno: turno || '',
-        pesoTarima: pesoTarima || 0,
+        pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
         pesoBruto: pesoBruto || 0,
         pesoNeto: pesoNeto || 0,
         piezas: piezas || 0,
@@ -355,7 +379,7 @@ const EtiquetadoBFX_produccion: React.FC = () => {
         { name: 'Fecha', value: data.fecha }
     ];
 
-    const emptyFields = requiredFields.filter(field => !field.value);
+    const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
 
     if (emptyFields.length > 0) {
         Swal.fire({
@@ -417,30 +441,33 @@ const EtiquetadoBFX_produccion: React.FC = () => {
           shrink: true,
         }}/>
           <Autocomplete
-                value={areas.find(area => area.id === selectedArea)}
-              onChange={(event, newValue) => setSelectedArea(newValue?.id)}
-              options={areas}
-              getOptionLabel={(option) => option.area}
-              renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
-          />
-          <Autocomplete
-              value={ordenes.find(o => o.id === selectedOrden)}
-              onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-              options={ordenes}
-              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
-              filterOptions={createFilterOptions({
-                matchFrom: 'start',
-                stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
-              })}
-              renderInput={(params) => <TextField {...params} label="Orden" />}
-          />
-          <Autocomplete
-              value={filteredMaquinas.find(m => m.id === selectedMaquina)}
-              onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
-              options={filteredMaquinas}
-              getOptionLabel={(option) => option.maquina}
-              renderInput={(params) => <TextField {...params} label="Máquina" />}
-          />
+                key={`area-${resetKey}`}
+                value={areas.find(area => area.id === selectedArea) || null}
+                onChange={(event, newValue) => setSelectedArea(newValue?.id)}
+                options={areas}
+                getOptionLabel={(option) => option.area}
+                renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
+            />
+            <Autocomplete
+                key={`orden-${resetKey}`}
+                value={ordenes.find(o => o.id === selectedOrden) || null}
+                onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+                options={ordenes}
+                getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
+                filterOptions={createFilterOptions({
+                    matchFrom: 'start',
+                    stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
+                })}
+                renderInput={(params) => <TextField {...params} label="Orden" />}
+            />
+            <Autocomplete
+                key={`maquina-${resetKey}`}
+                value={filteredMaquinas.find(m => m.id === selectedMaquina) || null}
+                onChange={(event, newValue) => setSelectedMaquina(newValue?.id)}
+                options={filteredMaquinas}
+                getOptionLabel={(option) => option.maquina}
+                renderInput={(params) => <TextField {...params} label="Máquina" />}
+            />
           <TextField
               fullWidth
               label="Producto"
@@ -450,16 +477,17 @@ const EtiquetadoBFX_produccion: React.FC = () => {
               }}
               variant="outlined"
           />
-            <Autocomplete
-                value={turnos.find(t => t.id === selectedTurno)}
+             <Autocomplete
+                key={`turno-${resetKey}`}
+                value={turnos.find(t => t.id === selectedTurno) || null}
                 onChange={(event, newValue) => setSelectedTurno(newValue?.id)}
                 options={turnos}
                 getOptionLabel={(option) => option.turno}
                 renderInput={(params) => <TextField {...params} label="Turno" />}
             />
-
             <Autocomplete
-                value={operadores.find(o => o.id === selectedOperador)}
+                key={`operador-${resetKey}`}
+                value={operadores.find(o => o.id === selectedOperador) || null}
                 onChange={(event, newValue) => setSelectedOperador(newValue?.id)}
                 options={operadores}
                 getOptionLabel={(option) => `${option.numNomina} - ${option.nombreCompleto}`}
@@ -515,6 +543,9 @@ const EtiquetadoBFX_produccion: React.FC = () => {
 
         </Box>
         <Box className='impresion-button-bfx'>
+        <Button variant="contained" color="secondary" onClick={resetValores}>
+                RESETEAR VALORES
+            </Button>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
             VISTA PREVIA
           </Button>
@@ -579,14 +610,31 @@ const EtiquetadoBFX_produccion: React.FC = () => {
             </div>
           </Box>
           <Box className="bfx-modal-footer">
-            <Autocomplete
+          <Autocomplete
               value={selectedPrinter}
               onChange={(event, newValue: Printer | null) => {
                 setSelectedPrinter(newValue);  // Directly set the new value
               }}
               options={printerOptions} // Ensure printerOptions is of type Printer[]
               getOptionLabel={(option) => option.name}
-              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
             />
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir

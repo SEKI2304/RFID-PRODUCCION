@@ -48,6 +48,7 @@ interface Orden {
   itemDescription?: string;
   itemNumber?: string;
   unidad: string;
+  claveUnidad:string;
 }
 
 interface EtiquetaData {
@@ -92,11 +93,13 @@ const EtiquetadoVaso_produccion: React.FC = () => {
   const [cantidadCajas, setCantidadCajas] = useState('');
   const [totalPiezas, setTotalPiezas] = useState('');
   const [resetKey, setResetKey] = useState(0);
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
   
 
@@ -164,10 +167,16 @@ const EtiquetadoVaso_produccion: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Establece el producto concatenado
           setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
         }
       });
     }
-  }, [selectedArea, selectedOrden]);;
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
+
 
 useEffect(() => {
   const vasoPorCaja = parseInt(cantidadVasoPorCaja, 10) || 0;
@@ -196,7 +205,7 @@ useEffect(() => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
+  const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
     const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
     const doc = new jsPDF({
@@ -226,16 +235,15 @@ useEffect(() => {
     doc.text(`LOTE:${orden}`, 20, 161);
     doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(72);
-    doc.text(`${pesoNeto} KGM`, 5, 207);
-    doc.text(`${piezas} ${unidad}`, 140, 207);
+
+    doc.setFontSize(110);
+    doc.text(`${cantidadCajas} ${claveUnidad}`, 70, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
     doc.line(5, 167, 275, 167);
-    doc.line(135, 167, 135, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
 
@@ -343,7 +351,7 @@ useEffect(() => {
       { name: 'Cantidad Total', value: data.postExtraVasoDto.totalAmount }
   ];
 
-    const emptyFields = requiredFields.filter(field => !field.value);
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
 
     if (emptyFields.length > 0) {
         Swal.fire({
@@ -538,7 +546,7 @@ useEffect(() => {
               <Typography><strong>Piezas:</strong> {totalPiezas}</Typography>
             </div>
             <div className="row">
-              <Typography><strong>{unidad}:</strong> {piezas}</Typography>
+             
             </div>
             <div className="row">
               <Typography><strong>Codigo de Trazabilidad:</strong> {trazabilidad}</Typography>
@@ -548,14 +556,31 @@ useEffect(() => {
             </div>
           </Box>
           <Box className="bfx-modal-footer">
-            <Autocomplete
+          <Autocomplete
               value={selectedPrinter}
               onChange={(event, newValue: Printer | null) => {
                 setSelectedPrinter(newValue);  // Directly set the new value
               }}
               options={printerOptions} // Ensure printerOptions is of type Printer[]
               getOptionLabel={(option) => option.name}
-              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
             />
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir

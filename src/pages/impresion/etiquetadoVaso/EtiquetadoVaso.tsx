@@ -8,7 +8,7 @@ import '../etiquetadobfx/etiquetadobfx.scss';
 import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete } from '@mui/material';
 import jsPDF from 'jspdf';
-
+import Swal from 'sweetalert2';
 
 interface Area {
   id: number;
@@ -48,6 +48,7 @@ interface Orden {
   itemDescription?: string;
   itemNumber?: string;
   unidad: string;
+  claveUnidad:string;
 }
 
 interface EtiquetaData {
@@ -93,11 +94,13 @@ const EtiquetadoVaso: React.FC = () => {
   const [cantidadCajas, setCantidadCajas] = useState('');
   const [totalPiezas, setTotalPiezas] = useState('');
   const [resetKey, setResetKey] = useState(0);
+  const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" }
+    { name: "Impresora 2", ip: "172.16.20.57" },
+    { name: "Impresora 3", ip: "172.16.20.58" }
   ];
   
 
@@ -158,17 +161,22 @@ const EtiquetadoVaso: React.FC = () => {
   }, [selectedArea]);
 
   useEffect(() => {
-    if (selectedOrden) {
+    if (selectedArea && selectedOrden) {
       axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado);
-          setUnidad(orden.unidad);
+          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
+          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          
+          // Aplica la lógica para claveUnidad
+          const validKeys = ["MIL", "XBX", "H87"];
+          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+          setClaveUnidad(nuevaClaveUnidadLocal);
         }
       });
     }
-  }, [selectedOrden, selectedArea]);
+  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
 
 useEffect(() => {
   const vasoPorCaja = parseInt(cantidadVasoPorCaja, 10) || 0;
@@ -204,7 +212,7 @@ useEffect(() => {
     setResetKey(prevKey => prevKey + 1);  // Incrementa la key para forzar rerender
   };
 
-  const generatePDF = (data: EtiquetaData) => {
+  const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
     const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
   
     const doc = new jsPDF({
@@ -230,19 +238,19 @@ useEffect(() => {
     let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
     currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
 
-    doc.setFontSize(56);
-    doc.text(`LOTE:${orden}`, 20, 167);
-    doc.text(`${fecha} `, 155, 167);
+    doc.setFontSize(40);
+    doc.text(`LOTE:${orden}`, 20, 161);
+    doc.text(`${fecha} `, 155, 161);
 
-    doc.setFontSize(80);
-    doc.text(`${cantidadCajas} CAJAS`, 80, 205);
+
+    doc.setFontSize(110);
+    doc.text(`${cantidadCajas} ${claveUnidad}`, 70, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
     doc.line(5, 55, 275, 55);
     doc.line(5, 145, 275, 145);
-    doc.line(5, 175, 275, 175);
-  
+    doc.line(5, 167, 275, 167);
     window.open(doc.output('bloburl'), '_blank');
   };
 
@@ -302,9 +310,13 @@ useEffect(() => {
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
-        alert('Por favor, seleccione una impresora.');
-        return;
-    }
+      Swal.fire({
+          icon: 'warning',
+          title: 'Impresora no seleccionada',
+          text: 'Por favor, seleccione una impresora.',
+      });
+      return;
+  }
     const url = `http://172.16.10.31/api/Vaso/PostPrintVaso?ip=${selectedPrinter.ip}`;
 
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -338,16 +350,53 @@ useEffect(() => {
       }
     };
 
-    axios.post(url, data)
-        .then(response => {
-            console.log('Etiqueta generada:', response.data);
-            resetForm();
-            handleCloseModal();
-            generatePDF(data);
-        })
-        .catch(error => {
-            console.error('Error al generar la etiqueta:', error);
+    const requiredFields = [
+      { name: 'Área', value: data.area },
+      { name: 'Clave de Producto', value: data.claveProducto },
+      { name: 'Nombre de Producto', value: data.nombreProducto },
+      { name: 'Clave de Operador', value: data.claveOperador },
+      { name: 'Operador', value: data.operador },
+      { name: 'Turno', value: data.turno },
+      { name: 'Trazabilidad', value: data.trazabilidad },
+      { name: 'Orden', value: data.orden },
+      { name: 'RFID', value: data.rfid },
+      { name: 'UOM', value: data.uom },
+      { name: 'Fecha', value: data.fecha },
+      { name: 'Cantidad por Caja', value: data.postExtraVasoDto.amountPerBox },
+      { name: 'Cajas', value: data.postExtraVasoDto.boxes },
+      { name: 'Cantidad Total', value: data.postExtraVasoDto.totalAmount }
+  ];
+
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
+
+    if (emptyFields.length > 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos incompletos',
+            text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
         });
+        return;
+    }
+  
+      axios.post(url, data)
+          .then(response => {
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Etiqueta generada',
+                  text: 'La etiqueta se ha generado correctamente.',
+              });
+              resetForm();
+              handleCloseModal();
+              generatePDF(data);
+          })
+          .catch(error => {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'Hubo un error al generar la etiqueta.',
+              });
+              console.error('Error al generar la etiqueta:', error);
+          });
 };
 
 
@@ -476,12 +525,12 @@ useEffect(() => {
             />
         </Box>
         <Box className='impresion-button-bfx'>
-          <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
+          <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta} >
             VISTA PREVIA
           </Button>
         </Box>
       </Box>
-      <Modal open={openModal} onClose={handleCloseModal}>
+      <Modal open={openModal} onClose={handleCloseModal} style={{ zIndex: 1050 }}>
         <Paper className="bfx-modal-content">
           <Box className="bfx-modal-header">
             <Typography variant="h6">Vista Previa de la Etiqueta</Typography>
@@ -547,7 +596,24 @@ useEffect(() => {
               }}
               options={printerOptions} // Ensure printerOptions is of type Printer[]
               getOptionLabel={(option) => option.name}
-              renderInput={(params) => <TextField {...params} label="Printer" fullWidth />}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  label="Printer" 
+                  fullWidth 
+                  sx={{ 
+                    '& .MuiInputBase-root': { 
+                      height: '60px' // Ajusta la altura del campo de entrada
+                    } 
+                  }} 
+                />
+              )}
+              sx={{ 
+                width: '180px', // Ajusta el ancho del componente
+                '& .MuiAutocomplete-inputRoot': { 
+                  height: '60px' // Ajusta la altura del componente Autocomplete
+                } 
+              }}
             />
             <Button variant="contained" color="primary" onClick={handleConfirmEtiqueta}>
               Guardar e Imprimir
