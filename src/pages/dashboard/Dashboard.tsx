@@ -12,14 +12,7 @@ import PrintIcon from '@mui/icons-material/Print';
 
 const icons = [
   { icon: PrintIcon, label: 'IMPRESION TARIMA PRODUCCION', path: '/ModulosTarima' },
-  { icon: ArrowUpwardIcon, label: 'ENTRADAS', path: '/entradas' },
-  { icon: ExitToAppIcon, label: 'SALIDAS', path: '/salidas' },
-  { icon: LocationOnIcon, label: 'UBICACIÓN', path: '/ubicacion' },
   { icon: WebIcon, label: 'CONSULTAS', path: '/consultas' },
-  { icon: SignalWifi4BarIcon, label: 'HANDHELD', path: '/handheld' },
-  { icon: SatelliteIcon, label: 'ANTENAS', path: '/antenas' },
-  { icon: LibraryBooksIcon, label: 'CATALOGOS', path: '/catalogos' },
-  { icon: PrintIcon, label: 'IMPRESION MATERIA PRIMA', path: '/modulosimpresion' },
 ];
 
 export const Dashboard: React.FC = () => {

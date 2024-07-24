@@ -10,7 +10,7 @@ html, body, #root {
   align-items: center;
   justify-content: center; /* Alineación al inicio para cuando hay scroll */
   min-height: 100vh; /* Usa min-height en lugar de height para permitir que se expanda */
-  background-color: #f0f4f7;
+  background-color: #ffffff;
   overflow-x: hidden; /* Oculta el desbordamiento horizontal */
   overflow-y: auto; /* Permite desplazamiento vertical cuando es necesario */
   width: 100%; /* Asegura que ocupe todo el ancho disponible */
@@ -102,7 +102,7 @@ div.MuiBox-root.css-6d9ffm{
   justify-content: flex-start;
   width: 100%;
   padding-left: 16px; /* Espacio desde el borde izquierdo */
-  background-color: #f0f4f7;
+  background-color: #ffffff;
   padding-top: 10px;
 }
 .bottom-container-bfx {

@@ -4,7 +4,7 @@ html, body, #root {
     overflow: hidden; // Consider if you want to keep overflow hidden globally
 }
 
-.catalogo-bfx {
+.consulta-quality {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -19,13 +19,13 @@ html, body, #root {
         position: absolute;
         top: 16px;
         left: 16px;
-        z-index: 10; /// Ensure the button is above other content
+        z-index: 10; // Ensure the button is above other content
     }
 
     .title {
         margin-top: 16px; // Adjust top margin to provide spacing
         padding-left: 60px; // Increase left padding to push the text further from the back button
-        text-align: left; // Align text to the left to utilize the padding effectively
+        text-align: center; // Align text to the left to utilize the padding effectively
         width: 100%; // Add padding to avoid overlap with back button
     }
 
@@ -37,49 +37,8 @@ html, body, #root {
         margin: 20px 0; // Add some vertical margin
     }
 
-    .bfx-modal-content {
-        width: 90%;
-        max-width: 1000px;
-        margin: 20px auto;
-        padding: 20px;
-        position: relative;
-        overflow-y: auto; // Allows vertical scrolling if content is too long
-    }
-
-    .bfx-modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .bfx-modal-body {
-        display: grid;
-        grid-template-columns: 1fr 1fr; // Two columns
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .bfx-modal-body .row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-    }
-
-    .bfx-modal-footer {
-        display: flex;
-        justify-content: center;
-    }
-
-    .img-etiquetado {
-        max-height: 60px;
-    }
-
-    .bfx-generate-button {
-        background-color: #46707e;
-        color: white;
+    .data-grid-container {
+        width: 100%;
     }
 }
 

@@ -6,23 +6,23 @@ import BioflexImage from '../../../assets/bioflex.png';
 import DestinyImage from '../../../assets/destiny.png'; 
 import QualityImage from '../../../assets/quality.png';
 import ReymaImage from '../../../assets/Reyma.png';
-import './modulosimpresion.scss';
+import './modulosconsultas.scss';
 
 const modules = [
-  { image: BioflexImage, label: 'BIOFLEX', path: '/impresionBFX' },
-  { image: DestinyImage, label: 'DESTINY', path: '/impresionDestiny' },
-  { image: QualityImage, label: 'QUALITY', path: '/impresionQuality' },
-  { image: ReymaImage, label: 'VASO', path: '/impresionVaso' },
+  { image: BioflexImage, label: 'BIOFLEX', path: '/ConsultaBFX' },
+  { image: DestinyImage, label: 'DESTINY', path: '/ConsultaDestiny' },
+  { image: QualityImage, label: 'QUALITY', path: '/ConsultaQuality' },
+  { image: ReymaImage, label: 'VASO', path: '/ConsultaVaso' },
 ];
 
 {/*const modules2 = [
   { image: BioflexImage, label: 'MATERIA PRIMA', path: '/impresionMP' },
 ];*/}
-const ModulosImpresion: React.FC = () => {
+const MoudulosConsultas: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className='modulos-impresion'>
+    <div className='modulos-consulta'>
       <Box sx={{ width: '100%', p: 1, position: 'relative' }}>
         <IconButton
           onClick={() => navigate('/')}
@@ -37,7 +37,7 @@ const ModulosImpresion: React.FC = () => {
         </IconButton>
         <Box sx={{ pt: 3, width: '100%', textAlign: 'center' }}>
           <Typography variant="h5" sx={{ mt: 3 }}> 
-            SELECCIONA EL FORMATO DE ETIQUETA QUE REQUIERES IMPRIMIR DE PRODUCTO TERMINADO
+            SELECCIONA LA TABLA QUE TE GUSTARIA CONSULTAR
           </Typography>
         </Box>
       </Box>
@@ -74,48 +74,8 @@ const ModulosImpresion: React.FC = () => {
           ))}
         </Grid>
       </Box>
-      {/*<Box sx={{ width: '100%', p: 1, position: 'relative' }}>
-        <Box sx={{ pt: 3, width: '100%', textAlign: 'center' }}>
-          <Typography variant="h5" sx={{ mt: 3 }}> 
-            SELECCIONA EL FORMATO DE ETIQUETA QUE REQUIERES IMPRIMIR DE MP
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-        <Grid container spacing={4} justifyContent="center">
-          {modules2.map((item, index) => (
-            <Grid item key={index} sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Link to={item.path} style={{ textDecoration: 'none' }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 250,
-                    width: 250,
-                    backgroundColor: '#46707e',
-                    borderRadius: 2,
-                    boxShadow: 3,
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: '#3b5c6b',
-                    },
-                    mx: 2,
-                  }}
-                >
-                  {item.image && <img src={item.image} alt={item.label} style={{ width: '50%', height: 'auto' }} />}
-                  <Typography variant="h6" sx={{ mt: 2 }}>
-                    {item.label}
-                  </Typography>
-                </Box>
-              </Link>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>*/}
     </div>
   );
 };
 
-export default ModulosImpresion;
+export default MoudulosConsultas;

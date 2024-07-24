@@ -1,4 +1,4 @@
-.modulos-impresion {
+.modulos-consulta {
   display: flex;
   flex-direction: column;
   align-items: center; // Centra los elementos horizontalmente
@@ -10,32 +10,30 @@
   box-sizing: border-box; // Incluye padding en el cálculo del ancho y la altura
 }
 
-
-
-.modulos-impresion .back-button {
+.modulos-consulta .back-button {
   position: absolute;
   top: 16px;
   left: 16px;
 }
 
-.modulos-impresion .title {
+.modulos-consulta .title {
   width: 100%;
   text-align: center;
   margin-bottom: 32px;
 }
 
-.modulos-impresion .grid-container {
+.modulos-consulta .grid-container {
   width: 100%; // Asegura que el contenedor tome el ancho completo
   padding: 16px;
 }
 
-.modulos-impresion .grid-item {
+.modulos-consulta .grid-item {
   display: flex;
   justify-content: center;
   padding: 8px; // Reduce el margen para dispositivos más pequeños
 }
 
-.modulos-impresion .card {
+.modulos-consulta .card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -51,24 +49,24 @@
   padding: 20px; // Ajuste del padding para asegurar espacio interno suficiente
 }
 
-.modulos-impresion .card:hover {
+.modulos-consulta .card:hover {
   background-color: #3b5c6b;
 }
 
-.modulos-impresion img {
+.modulos-consulta img {
   max-width: 80%; // Aumenta el tamaño de la imagen
   height: auto;
 }
 
-.modulos-impresion .card-title {
+.modulos-consulta .card-title {
   margin-top: 10px; // Ajuste del margen superior
 }
 
 @media (max-width: 600px) {
-  .modulos-impresion {
+  .modulos-consulta {
     padding: 8px;
   }
-  .modulos-impresion .card {
+  .modulos-consulta .card {
     max-width: 100%; // Permite que las tarjetas tomen todo el ancho disponible
   }
 }

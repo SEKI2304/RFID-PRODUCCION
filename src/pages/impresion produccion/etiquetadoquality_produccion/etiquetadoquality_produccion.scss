@@ -10,7 +10,7 @@ html, body, #root {
     align-items: center;
     justify-content: center; /* Alineación al inicio para cuando hay scroll */
     min-height: 100vh; /* Usa min-height en lugar de height para permitir que se expanda */
-    background-color: #f0f4f7;
+    background-color: #ffffff;
     overflow-x: hidden; /* Oculta el desbordamiento horizontal */
     overflow-y: auto; /* Permite desplazamiento vertical cuando es necesario */
     width: 100%; /* Asegura que ocupe todo el ancho disponible */
@@ -49,7 +49,7 @@ html, body, #root {
   
   .impresion-button-quality {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     margin-top: 16px;
   }
   

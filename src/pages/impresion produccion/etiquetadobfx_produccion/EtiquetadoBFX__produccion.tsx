@@ -9,6 +9,8 @@ import EtiquetaImpresion from '../../../assets/EiquetBFX.jpg';
 import { Autocomplete, createFilterOptions } from '@mui/material';
 import jsPDF from 'jspdf';
 import Swal from 'sweetalert2';
+import { styled } from '@mui/material/styles';
+
 
 interface Area {
   id: number;
@@ -99,27 +101,6 @@ const EtiquetadoBFX_produccion: React.FC = () => {
     { name: "Impresora 3", ip: "172.16.20.58" }
   ];
   
-  const handlePesoBrutoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const newPesoBruto = parseFloat(event.target.value);
-    // Verifica que el nuevo peso bruto no sea menor que el peso neto existente.
-    if (!isNaN(newPesoBruto) && (pesoNeto === undefined || newPesoBruto >= pesoNeto)) {
-      setPesoBruto(newPesoBruto);
-    } else {
-      // Opcional: Manejo de errores o alertas aquí.
-      console.error('El peso bruto no puede ser menor que el peso neto.');
-    }
-  };
-
-  const handlePesoNetoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newPesoNeto = parseFloat(event.target.value);
-    // Verifica que el nuevo peso neto no sea mayor que el peso bruto existente.
-    if (!isNaN(newPesoNeto) && (pesoBruto === undefined || newPesoNeto <= pesoBruto)) {
-      setPesoNeto(newPesoNeto);
-    } else {
-      // Opcional: Manejo de errores o alertas aquí.
-      console.error('El peso neto no puede ser mayor que el peso bruto.');
-    }
-  };
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(event.target.value);
@@ -208,8 +189,49 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   const handleCloseModal = () => setOpenModal(false);
 
   const handleGenerateEtiqueta = () => {
+    // Verificamos que los pesos bruto y neto no sean iguales y manejen las otras condiciones
+    if (pesoBruto !== undefined && pesoNeto !== undefined) {
+        if (pesoBruto < pesoNeto) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validación de Pesos',
+                text: 'El peso bruto no puede ser menor que el peso neto.',
+            });
+            return; // Detiene la ejecución si la validación falla
+        }
+
+        if (pesoNeto > pesoBruto) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Validación de Pesos',
+                text: 'El peso neto no puede ser mayor que el peso bruto.',
+            });
+            return; // Detiene la ejecución si la validación falla
+        }
+
+        if (pesoBruto === pesoNeto) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validación de Pesos Idénticos',
+                text: 'El peso bruto y el peso neto no deben ser iguales.',
+            });
+            return; // Detiene la ejecución si los pesos son iguales
+        }
+    }
+
+    // Si todas las validaciones pasan, entonces procede a generar la etiqueta
     handleOpenModal();
-  };
+};
+
+
+const RedButton = styled(Button)({
+  backgroundColor: 'red',
+  color: 'white',
+  '&:hover': {
+    backgroundColor: 'darkred',
+  },
+});
+
 
   const generateTrazabilidad = async () => {
     const base = '2';
@@ -325,93 +347,104 @@ const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
 
 
 
-  const handleConfirmEtiqueta = () => {
-    if (!selectedPrinter) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Impresora no seleccionada',
-            text: 'Por favor, seleccione una impresora.',
-        });
-        return;
-    }
+const handleConfirmEtiqueta = () => {
+  if (!selectedPrinter) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Impresora no seleccionada',
+          text: 'Por favor, seleccione una impresora.',
+      });
+      return;
+  }
 
-    const area = areas.find(a => a.id === selectedArea)?.area;
-    const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
-    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos;
-    const turno = turnos.find(t => t.id === selectedTurno)?.turno;
-    const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
+  const area = areas.find(a => a.id === selectedArea)?.area;
+  const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
+  const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
+  const producto = filteredProductos;
+  const turno = turnos.find(t => t.id === selectedTurno)?.turno;
+  const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
 
-    const data = {
-        area: area || '',
-        claveProducto: producto.split(' ')[0],
-        nombreProducto: producto.split(' ').slice(1).join(' '),
-        claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
-        operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
-        turno: turno || '',
-        pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
-        pesoBruto: pesoBruto || 0,
-        pesoNeto: pesoNeto || 0,
-        piezas: piezas || 0,
-        trazabilidad: trazabilidad,
-        orden: orden || "",
-        rfid: rfid,
-        status: 1,
-        uom: unidad,
-        fecha: date
-    };
+  const data = {
+      area: area || '',
+      claveProducto: producto.split(' ')[0],
+      nombreProducto: producto.split(' ').slice(1).join(' '),
+      claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
+      operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
+      turno: turno || '',
+      pesoTarima: pesoTarima !== undefined ? pesoTarima : '',
+      pesoBruto: pesoBruto || 0,
+      pesoNeto: pesoNeto || 0,
+      piezas: piezas || 0,
+      trazabilidad: trazabilidad,
+      orden: orden || "",
+      rfid: rfid,
+      status: 1,
+      uom: unidad,
+      fecha: date
+  };
 
-    // Validación de campos requeridos
-    const requiredFields = [
-        { name: 'Área', value: data.area },
-        { name: 'Clave de Producto', value: data.claveProducto },
-        { name: 'Nombre de Producto', value: data.nombreProducto },
-        { name: 'Clave de Operador', value: data.claveOperador },
-        { name: 'Operador', value: data.operador },
-        { name: 'Turno', value: data.turno },
-        { name: 'Peso Tarima', value: data.pesoTarima },
-        { name: 'Peso Bruto', value: data.pesoBruto },
-        { name: 'Peso Neto', value: data.pesoNeto },
-        { name: 'Piezas', value: data.piezas },
-        { name: 'Orden', value: data.orden },
-        { name: 'RFID', value: data.rfid },
-        { name: 'UOM', value: data.uom },
-        { name: 'Fecha', value: data.fecha }
-    ];
+  // Validación de peso bruto y peso neto
+  if (data.pesoBruto === 0 || data.pesoNeto === 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Pesos inválidos',
+          text: 'El peso bruto y el peso neto no pueden ser 0.',
+      });
+      return;
+  }
 
-    const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
+  // Validación de campos requeridos
+  const requiredFields = [
+      { name: 'Área', value: data.area },
+      { name: 'Clave de Producto', value: data.claveProducto },
+      { name: 'Nombre de Producto', value: data.nombreProducto },
+      { name: 'Clave de Operador', value: data.claveOperador },
+      { name: 'Operador', value: data.operador },
+      { name: 'Turno', value: data.turno },
+      { name: 'Peso Tarima', value: data.pesoTarima },
+      { name: 'Peso Bruto', value: data.pesoBruto },
+      { name: 'Peso Neto', value: data.pesoNeto },
+      { name: 'Piezas', value: data.piezas },
+      { name: 'Orden', value: data.orden },
+      { name: 'RFID', value: data.rfid },
+      { name: 'UOM', value: data.uom },
+      { name: 'Fecha', value: data.fecha }
+  ];
 
-    if (emptyFields.length > 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos incompletos',
-            text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
-        });
-        return;
-    }
+  const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
 
-    const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+  if (emptyFields.length > 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Campos incompletos',
+          text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+      });
+      return;
+  }
 
-    axios.post(url, data)
-        .then(response => {
-            Swal.fire({
-                icon: 'success',
-                title: 'Etiqueta generada',
-                text: 'La etiqueta se ha generado correctamente.',
-            });
-            resetForm();
-            handleCloseModal();
-            generatePDF(data);
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Hubo un error al generar la etiqueta.',
-            });
-            console.error('Error al generar la etiqueta:', error);
-        });
+  const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
+
+  axios.post(url, data)
+      .then(response => {
+          Swal.fire({
+              icon: 'success',
+              title: 'Etiqueta generada',
+              text: 'La etiqueta se ha generado correctamente.',
+          });
+          resetForm();
+          handleCloseModal();
+          generatePDF(data);
+      })
+      .catch(error => {
+          Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Hubo un error al generar la etiqueta.',
+          });
+          console.error('Error al generar la etiqueta:', error);
+      });
 };
+
 
 
   
@@ -499,8 +532,8 @@ const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
               label="PESO BRUTO"
               variant="outlined"
               type="number"
-              value={pesoBruto}
-              onChange={handlePesoBrutoChange}
+              value={pesoBruto === undefined ? '' : pesoBruto}  // Asegúrate de manejar correctamente undefined
+              onChange={(event) => setPesoBruto(event.target.value === '' ? undefined : parseFloat(event.target.value))}
           />
 
           <TextField
@@ -509,10 +542,9 @@ const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
               label="PESO NETO"
               variant="outlined"
               type="number"
-              value={pesoNeto}
-              onChange={handlePesoNetoChange}
+              value={pesoNeto === undefined ? '' : pesoNeto}  // Asegúrate de manejar correctamente undefined
+              onChange={(event) => setPesoNeto(event.target.value === '' ? undefined : parseFloat(event.target.value))}
           />
-
           <TextField
               key={`peso-tarima-${resetKey}`}
               fullWidth
@@ -543,9 +575,9 @@ const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
 
         </Box>
         <Box className='impresion-button-bfx'>
-        <Button variant="contained" color="secondary" onClick={resetValores}>
-                RESETEAR VALORES
-            </Button>
+          <RedButton variant="contained" onClick={resetValores}>
+            RESETEAR VALORES
+          </RedButton>
           <Button variant="contained" className="generate-button" onClick={handleGenerateEtiqueta}>
             VISTA PREVIA
           </Button>

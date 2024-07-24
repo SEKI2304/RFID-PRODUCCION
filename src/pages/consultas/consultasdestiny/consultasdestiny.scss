@@ -4,7 +4,7 @@ html, body, #root {
   overflow: hidden; // Consider if you want to keep overflow hidden globally
 }
 
-.catalogo-destiny {
+.consulta-destiny {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,51 +39,6 @@ html, body, #root {
 
   .data-grid-container {
       width: 100%;
-  }
-
-  .destiny-modal-content {
-      width: 90%;
-      max-width: 1000px;
-      margin: 20px auto;
-      padding: 20px;
-      position: relative;
-      overflow-y: auto; // Allows vertical scrolling if content is too long
-  }
-
-  .destiny-modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-  }
-
-  .destiny-modal-body {
-      display: grid;
-      grid-template-columns: 1fr 1fr; // Two columns
-      gap: 10px;
-      margin-bottom: 20px;
-  }
-
-  .destiny-modal-body .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-  }
-
-  .destiny-modal-footer {
-      display: flex;
-      justify-content: center;
-  }
-
-  .img-etiquetado {
-      max-height: 60px;
-  }
-
-  .destiny-generate-button {
-      background-color: #46707e;
-      color: white;
   }
 }
 

@@ -4,9 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { DataGrid, GridToolbar, GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import { IconButton, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import PrintIcon from '@mui/icons-material/Print';
-import './catalogodestiny.scss';
-
+import './consultasdestiny.scss';
 
 interface RowData {
   id: number;
@@ -37,78 +35,7 @@ interface RowData {
   itemNumber: string;
 }
 
-
-const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 100 },
-  { field: 'prodEtiquetaRFIDId', headerName: 'RFID ID', width: 120 },
-  { field: 'shippingUnits', headerName: 'Shipping Units', width: 130 },
-  { field: 'uom', headerName: 'UOM', width: 100 },
-  { field: 'inventoryLot', headerName: 'Inventory Lot', width: 150 },
-  { field: 'individualUnits', headerName: 'Individual Units', width: 130 },
-  { field: 'palletId', headerName: 'Pallet ID', width: 130 },
-  { field: 'customerPo', headerName: 'Customer PO', width: 130 },
-  { field: 'totalUnits', headerName: 'Total Units', width: 120 },
-  { field: 'productDescription', headerName: 'Product Description', width: 200 },
-  { field: 'itemNumber', headerName: 'Item Number', width: 120 },
-  {
-    field: 'acciones',
-    headerName: 'Acciones',
-    sortable: false,
-    filterable: false,
-    width: 150,
-    renderCell: (params) => (
-      <>
-        <IconButton onClick={() => handlePrintClick(params.row, 'http://172.16.10.31/Printer/DestinyPrinterIP?ip=172.16.20.58')}>
-          <PrintIcon />
-        </IconButton>
-      </>
-    ),
-  }
-];
-
-const handlePrintClick = (row: RowData, url: string) => {
-  const postData = {
-    area: row.area,
-    claveProducto: row.claveProducto,
-    nombreProducto: row.nombreProducto,
-    claveOperador: row.claveOperador,
-    operador: row.operador,
-    turno: row.turno,
-    pesoTarima: row.pesoTarima,
-    pesoBruto: row.pesoBruto,
-    pesoNeto: row.pesoNeto,
-    piezas: row.piezas,
-    trazabilidad: row.trazabilidad,
-    orden: row.orden.toString(),
-    rfid: row.rfid,
-    status: row.status,
-    fecha: row.fecha,
-    postExtraDestinyDto: {
-      shippingUnits: row.shippingUnits,
-      uom: row.uom,
-      inventoryLot: row.inventoryLot,
-      individualUnits: row.individualUnits,
-      palletId: row.palletId,
-      customerPo: row.customerPo,
-      totalUnits: row.totalUnits,
-      productDescription: row.productDescription,
-      itemNumber: row.itemNumber
-    }
-  };
-
-  axios.post(url, postData)
-    .then(response => {
-      console.log('Impresión iniciada:', response.data);
-      // Puedes manejar la respuesta de éxito aquí, como mostrar un mensaje de éxito.
-    })
-    .catch(error => {
-      console.error('Error al imprimir:', error);
-      // Puedes manejar errores aquí, como mostrar un mensaje de error.
-    });
-};
-
-
-const CatalogoDestiny: React.FC = () => {
+const ConsultaDestiny: React.FC = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState<GridRowsProp>([]);
 
@@ -146,14 +73,29 @@ const CatalogoDestiny: React.FC = () => {
       })
       .catch(error => console.error('Error fetching data:', error));
   }, []);
+ 
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 100 },
+    { field: 'prodEtiquetaRFIDId', headerName: 'RFID ID', width: 120 },
+    { field: 'shippingUnits', headerName: 'Shipping Units', width: 130 },
+    { field: 'uom', headerName: 'UOM', width: 100 },
+    { field: 'inventoryLot', headerName: 'Inventory Lot', width: 150 },
+    { field: 'individualUnits', headerName: 'Individual Units', width: 130 },
+    { field: 'palletId', headerName: 'Pallet ID', width: 130 },
+    { field: 'customerPo', headerName: 'Customer PO', width: 130 },
+    { field: 'totalUnits', headerName: 'Total Units', width: 120 },
+    { field: 'productDescription', headerName: 'Product Description', width: 200 },
+    { field: 'itemNumber', headerName: 'Item Number', width: 120 },
+  ];
+
 
   return (
-    <div className='catalogo-destiny'>
-      <IconButton onClick={() => navigate('/catalogos')} className="back-button">
+    <div className='consulta-destiny'>
+      <IconButton onClick={() => navigate('/Consultas')} className="back-button">
         <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
       </IconButton>
       <Typography variant="h4" className="title">
-        CATALOGO ETIQUETADO DESTINY
+      CONSULTA PT DESTINY
       </Typography>
       <div className="data-grid-container">
         <DataGrid
@@ -180,4 +122,4 @@ const CatalogoDestiny: React.FC = () => {
   );
 };
 
-export default CatalogoDestiny;
+export default ConsultaDestiny;

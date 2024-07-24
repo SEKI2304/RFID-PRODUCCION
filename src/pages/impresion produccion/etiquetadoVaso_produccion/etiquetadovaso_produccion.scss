@@ -1,105 +1,127 @@
 html, body, #root {
     height: 100%;
     margin: 0;
-    overflow: hidden; // Consider if you want to keep overflow hidden globally
-}
-
-.catalogo-bfx {
+    overflow: auto; // Permitir desplazamiento en el documento cuando sea necesario
+  }
+  
+  .impresion-container-vaso {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center; /* Alineación al inicio para cuando hay scroll */
     min-height: 100vh; /* Usa min-height en lugar de height para permitir que se expanda */
-    background-color: #f0f4f7;
+    background-color: #ffffff;
     overflow-x: hidden; /* Oculta el desbordamiento horizontal */
     overflow-y: auto; /* Permite desplazamiento vertical cuando es necesario */
     width: 100%; /* Asegura que ocupe todo el ancho disponible */
     padding: 16px; /* Añade algo de padding general */
     padding-bottom: 60px; /* Espacio adicional en la parte inferior para el footer */
-    box-sizing: border-box;/* Espacio adicional en la parte inferior para el footer */
-
-    .back-button {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        z-index: 10; /// Ensure the button is above other content
+    box-sizing: border-box;
+    .generate-button {
+      background-color: #46707e;
+      color: white;
     }
-
-    .title {
-        margin-top: 16px; // Adjust top margin to provide spacing
-        padding-left: 60px; // Increase left padding to push the text further from the back button
-        text-align: left; // Align text to the left to utilize the padding effectively
-        width: 100%; // Add padding to avoid overlap with back button
+  }
+  
+  .impresion-card-vaso {
+    background-color: #d1e0e5;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 75%;
+    max-width: 800px;
+    overflow-y: auto;
+  }
+  
+  .impresion-form-vaso {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr; // Ajusta para móviles
     }
-
-    .MuiDataGrid-root {
-        width: 100%; // Set the DataGrid width to 100% of its parent container
-        height: 600px; // Set a fixed height or adjust as necessary
-        overflow-x: auto; // Enable horizontal scrolling
-        overflow-y: auto; // Enable vertical scrolling
-        margin: 20px 0; // Add some vertical margin
+  }
+  
+  .impresion-button-vaso {
+    display: flex;
+    justify-content:space-between;
+    margin-top: 16px;
+  }
+  
+  .vaso-modal-content {
+    width: 90%;
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    position: relative;
+    overflow-y: auto; /* Permite desplazamiento vertical si el contenido es demasiado largo */
+  }
+  
+  .vaso-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .vaso-modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas */
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .vaso-modal-body .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+  }
+  
+  .vaso-modal-footer {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .img-etiquetado {
+    max-height: 60px;
+  }
+  
+  .vaso-generate-button {
+    background-color: #46707e;
+    color: white;
+  }
+  
+  div.MuiBox-root.css-6d9ffm {
+    padding: 50px;
+  }
+  
+  .top-container-vaso {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding-left: 16px; /* Espacio desde el borde izquierdo */
+    background-color: #ffffff;
+    padding-top: 10px;
+  }
+  
+  .bottom-container-vaso {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    background-color: #f0f4f7;
+    padding: 5px;
+  }
+  
+  @media (max-width: 768px) {
+    .impresion-card-vaso {
+      width: 95%;
+      padding: 16px;
     }
-
-    .bfx-modal-content {
-        width: 90%;
-        max-width: 1000px;
-        margin: 20px auto;
-        padding: 20px;
-        position: relative;
-        overflow-y: auto; // Allows vertical scrolling if content is too long
+    .vaso-modal-content {
+      width: 95%;
     }
-
-    .bfx-modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .bfx-modal-body {
-        display: grid;
-        grid-template-columns: 1fr 1fr; // Two columns
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .bfx-modal-body .row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-    }
-
-    .bfx-modal-footer {
-        display: flex;
-        justify-content: center;
-    }
-
-    .img-etiquetado {
-        max-height: 60px;
-    }
-
-    .bfx-generate-button {
-        background-color: #46707e;
-        color: white;
-    }
-}
-
-@media (max-width: 600px) {
-    .title {
-        font-size: 16px; // Smaller font size for smaller screens
-        padding-left: 30px; // Less padding for smaller screens
-    }
-    .back-button {
-        top: 10px; // Adjust position to fit smaller screens
-    }
-}
-
-.top-container-bfx {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  padding-left: 16px; /* Espacio desde el borde izquierdo */
-}
+  }
