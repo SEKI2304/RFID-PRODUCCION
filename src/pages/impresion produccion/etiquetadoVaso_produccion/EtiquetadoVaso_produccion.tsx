@@ -425,7 +425,7 @@ useEffect(() => {
 
 
   return (
-    <div className='catalogo-vaso'>
+    <div className='impresion-container-vaso'>
       <Box className='top-container-vaso'>
         <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
