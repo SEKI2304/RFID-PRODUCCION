@@ -124,7 +124,7 @@ const [resetKey, setResetKey] = useState(0);
   const [qtyUOM, setQtyUOM] = React.useState<string>("");
   const [shippingUnits, setShippingUnits] = React.useState<string>("");
   const [data, setData] = useState<InfoExtraDestiny[]>([]);
-  const [inventoryLot, setInventoryLot] = useState<InfoExtraDestiny | null>(null);
+  const [inventoryLot, setInventoryLot] = useState<string>('');
   const [customerPO, setCustomerPO] = useState<string>("");
   const [itemDescription, setItemDescription] = useState<string>("");
   const [itemNumber, setItemNumber] = useState<string>("");  
@@ -132,11 +132,21 @@ const [resetKey, setResetKey] = useState(0);
   const [numeroTarimaGenerado, setNumeroTarimaGenerado] = useState('');
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [unidad, setUnidad] = useState('Piezas');
+  const [piezasFormatted, setPiezasFormatted] = useState(''); 
+  
+  useEffect(() => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Información Importante',
+      text: 'A partir de ahora, ya no será necesario ingresar el lote del cliente. La aplicación te lo brindará automáticamente. Solo necesitas la orden de producción. Los campos que se completarán automáticamente son: UOM, INVENTORY LOT, PALLET ID, CUSTOMER PO, ITEM DESCRIPTION, ITEM#.',
+      confirmButtonText: 'Entendido',
+    });
+  }, []);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" },
-    { name: "Impresora 3", ip: "172.16.20.58" }
+    { name: "Impresora 3", ip: "172.16.20.112" }
   ];
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,7 +344,7 @@ const resetValores = () => {
   setSelectedUOM('');
   setQtyUOM('');
   setShippingUnits('');
-  setInventoryLot(null);
+  setInventoryLot('');
   setCustomerPO('');
   setItemDescription('');
   setItemNumber('');
@@ -398,7 +408,7 @@ const resetValores = () => {
 
     doc.setFontSize(80);
     doc.text(`${pesoNeto}`, 5, 207);
-    doc.text(`${piezas} ${claveUnidad}`, 122, 207);
+    doc.text(`${piezasFormatted} ${claveUnidad}`, 122, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
@@ -554,7 +564,7 @@ const resetValores = () => {
         postExtraDestinyDto: {
             shippingUnits: shippingUnits || 0,
             uom: selectedUOM || '',
-            inventoryLot: inventoryLot ? inventoryLot.u_PO2 : '',
+            inventoryLot: inventoryLot,
             individualUnits: qtyUOM || 0,
             palletId: traceabilityCode || '',
             customerPo: customerPO || '',
@@ -636,21 +646,32 @@ const resetValores = () => {
 
 
 
-  const calculatePieces = () => {
-    const qtyNumber = parseFloat(qtyUOM) || 0;
-    const unitsNumber = parseFloat(shippingUnits) || 0;
-    setPiezas(qtyNumber * unitsNumber);
-  };
+const calculatePieces = (inputPiezas: string | number) => {
+  // Convertir el valor a número
+  const totalPiezas = parseFloat(inputPiezas.toString());
 
-  const handleQtyUOMChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setQtyUOM(event.target.value);
-    calculatePieces();
-  };
+  // Establecer el valor de `piezas`
+  setPiezas(totalPiezas);
 
-  const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setShippingUnits(event.target.value);
-    calculatePieces();
-  };
+  // Verificar si claveUnidad es "MIL" y formatear el valor si es necesario
+  if (claveUnidad === 'MIL') {
+    const formattedPiezas = (totalPiezas / 1000).toFixed(2);
+    setPiezasFormatted(formattedPiezas);
+  } else {
+    setPiezasFormatted(totalPiezas.toString());
+  }
+};
+
+
+
+const handleQtyUOMChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setQtyUOM(event.target.value);// Pasar el valor correcto
+};
+
+const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  setShippingUnits(event.target.value);
+};
+
 
   useEffect(() => {
     axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
@@ -694,28 +715,37 @@ const resetValores = () => {
 
   useEffect(() => {
     if (selectedArea && selectedOrden) {
-      axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
-        const orden = response.data.find(orden => orden.id === selectedOrden);
-        if (orden) {
-          const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
-          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
-          
-          // Aplica la lógica para claveUnidad
-          const validKeys = ["MIL", "XBX", "H87"];
-          const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
-          setClaveUnidad(nuevaClaveUnidadLocal);
-        }
-      });
-    }
-  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
+        axios.get<Orden[]>(`http://172.16.10.31/api/Order?areaId=${selectedArea}`).then(response => {
+            const orden = response.data.find(orden => orden.id === selectedOrden);
+            if (orden) {
+                const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
+                setFilteredProductos(productoConcatenado);
+                setUnidad(orden.unidad || "default_unit");
 
-  useEffect(() => {
-    if (qtyUOM && shippingUnits) {
-      const calculatedPieces = parseInt(qtyUOM) * parseInt(shippingUnits);
-      setPiezas(calculatedPieces);
+                const validKeys = ["MIL", "XBX", "H87"];
+                const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
+                setClaveUnidad(nuevaClaveUnidadLocal);
+
+                // Usar el nuevo endpoint para obtener los datos adicionales
+                axios.get<InfoExtraDestiny[]>(`http://172.16.10.31/api/LabelDestiny/GetInfoExtraDestinyByPedidoClave?pedido=${orden.orden}&clave=${orden.claveProducto}`)
+                    .then((extraResponse) => {
+                        const infoExtra = extraResponse.data[0]; // Asumiendo que solo te interesa el primer elemento del array
+                        if (infoExtra) {
+                            setCustomerPO(infoExtra.u_PO1 || " ");
+                            setItemDescription(infoExtra.frgnName);
+                            setItemNumber(infoExtra.u_ItemNo);
+                            
+                            // Establecer solo el valor de u_PO2 en el Inventory Lot
+                            setInventoryLot(infoExtra.u_PO2 || '');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching extra info:', error);
+                    });
+            }
+        });
     }
-  }, [qtyUOM, shippingUnits]);
+}, [selectedArea, selectedOrden]);
 
   useEffect(() => {
         axios.get('http://172.16.10.31/api/LabelDestiny/GetInfoExtraDestiny')
@@ -724,15 +754,6 @@ const resetValores = () => {
             })
             .catch(error => console.error('Error fetching data: ', error));
     }, []);
-
-    // Actualizar campos basados en la selección del lote de inventario
-    useEffect(() => {
-        if (inventoryLot) {
-            setCustomerPO(inventoryLot.u_PO1 || " ");
-            setItemDescription(inventoryLot.frgnName);
-            setItemNumber(inventoryLot.u_ItemNo);
-        }
-    }, [inventoryLot]);
 
   // Definir el tipo para el objeto de mapeo.
   interface UOMMap {
@@ -851,29 +872,26 @@ const resetValores = () => {
           <TextField
             key={`piezas-${resetKey}`}
             fullWidth
-            label="#"
+            label="TOTAL PIEZAS"
             variant="outlined"
             type="number"
-            value={piezas || 0} // Se muestra 0 si `piezas` es undefined
-            InputProps={{ readOnly: true }}
+            value={piezas} // Se muestra 0 si `piezas` es undefined
+            onChange={(e) => calculatePieces(e.target.value)} // Aquí llamas a la función con el valor ingresado
           />
-
           <TextField fullWidth label="UOM" value={selectedUOM} InputProps={{ readOnly: true }} variant="outlined" key={`UOM-${resetKey}`}/>
-            
-          <Autocomplete
-            value={inventoryLot}
-            onChange={(event, newValue) => {
-                setInventoryLot(newValue);
+          <TextField
+            label="Inventory Lot"
+            fullWidth
+            value={inventoryLot} // Este valor se establece desde la API en el useEffect
+            InputProps={{
+              readOnly: true, // Hace que el campo sea solo de lectura
             }}
-            options={data}
-            getOptionLabel={(option) => `${option.u_PO2} - ${option.clave} ${option.producto}`}
-            renderInput={(params) => <TextField {...params} label="Inventory Lot" fullWidth />}
+            variant="outlined"
           />
-
           <TextField
             key={`QTY/UOM(Eaches)-${resetKey}`}
             fullWidth
-            label="Qty/UOM(Eaches)"
+            label="CANTIDAD POR CAJAS/ROLLOS"
             variant="outlined"
             type="number"
             value={qtyUOM}
@@ -890,7 +908,7 @@ const resetValores = () => {
           <TextField
             key={`Shipping Units/Pallet-${resetKey}`}
             fullWidth
-            label="Shipping Units/Pallet"
+            label="CANTIDAD DE CAJAS O ROLLOS"
             variant="outlined"
             type="number"
             value={shippingUnits}
@@ -927,10 +945,7 @@ const resetValores = () => {
               <Typography><strong>UOM:</strong> {selectedUOM}</Typography>
             </Box>
             <Box className="modal-row">
-              <Typography>
-                <strong>INVENTORY LOT:</strong> {inventoryLot ? inventoryLot.u_PO2 : 'N/A'}
-              </Typography>
-
+              <Typography><strong>INVENTORY LOT:</strong> {inventoryLot || 'N/A'}</Typography>
               <Typography><strong>QTY/UOM (EACHES):</strong> {qtyUOM}</Typography>
           </Box>
             <Box className="modal-row">

@@ -174,16 +174,31 @@ const EtiquetadoQuality_produccion: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Establece el producto concatenado
           setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
-          
+  
           // Aplica la lógica para claveUnidad
           const validKeys = ["MIL", "XBX", "H87"];
           const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
           setClaveUnidad(nuevaClaveUnidadLocal);
-          setItem(orden.producto);
+  
+          // Filtra el texto para eliminar el código al inicio y "(QUALITY)" solo si están presentes
+          let filteredItem = orden.producto;
+
+        // Elimina el código al inicio si comienza con "P" seguido de números
+        filteredItem = filteredItem.replace(/^P\d+\s*/, '');
+
+        // Elimina "(QUALITY)" si está presente
+        filteredItem = filteredItem.replace(/\(QUALITY\)/g, '');
+
+        // Elimina espacios en blanco al principio y al final
+        filteredItem = filteredItem.trim();
+
+        setItem(filteredItem);
         }
       });
     }
-  }, [selectedArea, selectedOrden]); //AGREGAR A LAS VISTASSSSSSS
+  }, [selectedArea, selectedOrden]);
+  
+
 
   useEffect(() => {
     const generateTraceabilityCode = () => {

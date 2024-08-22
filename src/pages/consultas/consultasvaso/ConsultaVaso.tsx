@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { DataGrid, GridToolbar, GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import './consultavaso.scss';
+import Swal from 'sweetalert2';
+import PrintIcon from '@mui/icons-material/Print';
 
 interface RowData {
   id: number;
@@ -29,10 +31,84 @@ interface RowData {
   totalAmount: number;
   prodEtiquetaRFIDId: number;
 }
+interface Printer {
+  id: number;
+  name: string;
+  ip: string;
+}
+
+const printers: Printer[] = [
+  { id: 1, name: 'Impresora 1', ip: '172.16.20.56' },
+  { id: 2, name: 'Impresora 2', ip: '172.16.20.57' },
+  { id: 3, name: 'Impresora 3', ip: '172.16.20.112' }
+];
 
 const ConsultaVaso: React.FC = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState<GridRowsProp>([]);
+
+  const showPrinterSelection = (row: RowData) => {
+    Swal.fire({
+      title: 'Seleccionar Impresora',
+      input: 'select',
+      inputOptions: printers.reduce((options, printer) => {
+        options[printer.id] = printer.name;
+        return options;
+      }, {} as Record<number, string>),
+      inputPlaceholder: 'Selecciona una impresora',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: (selectedPrinterId) => {
+        const selectedPrinter = printers.find(printer => printer.id === Number(selectedPrinterId));
+        if (!selectedPrinter) {
+          Swal.showValidationMessage('Por favor, selecciona una impresora');
+        }
+        return selectedPrinter;
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const selectedPrinter = result.value as Printer;
+        const postData = {
+          area: row.area,
+          claveProducto: row.claveProducto,
+          nombreProducto: row.nombreProducto,
+          claveOperador: row.claveOperador,
+          operador: row.operador,
+          turno: row.turno,
+          pesoTarima: row.pesoTarima,
+          pesoBruto: row.pesoBruto,
+          pesoNeto: row.pesoNeto,
+          piezas: row.piezas,
+          trazabilidad: row.trazabilidad,
+          orden: row.orden,
+          rfid: row.rfid,
+          status: row.status,
+          fecha: row.fecha,
+          postExtraVasoDto: { // Change the key here
+            prodEtiquetaRFIDId: row.prodEtiquetaRFIDId,
+            amountPerBox: row.amountPerBox,
+            boxes: row.boxes,
+            totalAmount: row.totalAmount
+          },
+        };
+
+        axios.post(`http://172.16.10.31/api/Vaso/PrintVasoLabel?ip=${selectedPrinter.ip}`, postData)
+          .then(response => {
+            console.log('Impresión iniciada:', response.data);
+            Swal.fire('Éxito', 'Impresión iniciada correctamente', 'success');
+          })
+          .catch(error => {
+            console.error('Error al imprimir:', error);
+            Swal.fire('Error', 'Hubo un error al iniciar la impresión', 'error');
+          });
+      }
+    });
+  };
+
+  const handlePrintClick = (row: RowData) => {
+    showPrinterSelection(row);
+  };
 
   useEffect(() => {
     axios.get('http://172.16.10.31/api/Vaso')
@@ -82,6 +158,20 @@ const ConsultaVaso: React.FC = () => {
     { field: 'amountPerBox', headerName: 'Amount Per Box', width: 150 },
     { field: 'boxes', headerName: 'Boxes', width: 100 },
     { field: 'totalAmount', headerName: 'Total Amount', width: 150 },
+    {
+      field: 'acciones',
+      headerName: 'Acciones',
+      sortable: false,
+      filterable: false,
+      width: 200,
+      renderCell: (params) => (
+        <>
+          <IconButton onClick={() => handlePrintClick(params.row)}>
+            <PrintIcon />
+          </IconButton>
+        </>
+      ),
+    },
   ];
   
 

@@ -50,6 +50,7 @@ interface Orden {
   itemNumber?: string;
   unidad: string;
   claveUnidad:string;
+  linea:number;
 }
 
 interface EtiquetaData {
@@ -85,6 +86,7 @@ const EtiquetadoVaso_produccion: React.FC = () => {
   const [piezas, setPiezas] = useState<number | undefined>();
   const [selectedOperador, setSelectedOperador] = useState<number | undefined>();
   const [openModal, setOpenModal] = useState(false);
+  const [lineaOrden, setLineaorden] = useState<number | undefined>();
   /*const [currentDate, setCurrentDate] = useState<string>('');*/
   const [trazabilidad, setTrazabilidad] = useState<string>('');
   const [rfid, setRfid] = useState<string>('');
@@ -100,7 +102,7 @@ const EtiquetadoVaso_produccion: React.FC = () => {
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" },
-    { name: "Impresora 3", ip: "172.16.20.58" }
+    { name: "Impresora 3", ip: "172.16.20.112" }
   ];
   
 
@@ -168,6 +170,7 @@ const EtiquetadoVaso_produccion: React.FC = () => {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
           setFilteredProductos(productoConcatenado); // Establece el producto concatenado
           setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          setLineaorden(orden.linea);
           
           // Aplica la lógica para claveUnidad
           const validKeys = ["MIL", "XBX", "H87"];
@@ -283,8 +286,11 @@ useEffect(() => {
   const handleCloseModal = () => setOpenModal(false);
 
   const handleGenerateEtiqueta = () => {
-    handleOpenModal();
-  };
+    setTimeout(() => {
+        handleOpenModal();
+    }, 4000); // 15000 milisegundos = 15 segundos
+};
+
 
   const generateTrazabilidad = async () => {
     const base = '2';
@@ -297,9 +303,10 @@ useEffect(() => {
     const areaCode = areaMap[selectedAreaName] || '0';
     const maquinaNo = filteredMaquinas.find(m => m.id === selectedMaquina)?.no || '00';
     const maquinaCode = maquinaNo.toString().padStart(2, '0');
-    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '000000';
-    const ordenCode = ordenNo.toString().padStart(6, '0');
-    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${ordenCode}`;
+    const ordenNo = ordenes.find(o => o.id === selectedOrden)?.orden || '00000';
+    const lineaNo = (lineaOrden ?? 1).toString().padStart(1, '0');
+    const ordenCode = ordenNo.toString().padStart(5, '0');
+    const partialTrazabilidad = `${base}${areaCode}${maquinaCode}${lineaNo}${ordenCode}`;
 
     try {
         const response = await axios.get('http://172.16.10.31/api/RfidLabel');
@@ -418,7 +425,7 @@ useEffect(() => {
 
 
   return (
-    <div className='impresion-container-vaso'>
+    <div className='catalogo-vaso'>
       <Box className='top-container-vaso'>
         <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
