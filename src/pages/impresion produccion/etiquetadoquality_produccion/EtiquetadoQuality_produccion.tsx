@@ -375,7 +375,12 @@ const resetValores = () => {
   
   const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
     const { claveProducto, nombreProducto, pesoBruto, orden, fecha } = data;
-  
+    
+    let piezasParaPDF = piezas; // Asumimos que `piezas` ya está definido en el estado
+    if (claveUnidad === "MIL") {
+      piezasParaPDF = piezasParaPDF ? piezasParaPDF / 1000 : 0;
+    }
+
     const doc = new jsPDF({
       orientation: 'landscape',
       unit: 'mm',
@@ -407,7 +412,7 @@ const resetValores = () => {
 
     doc.setFontSize(80);
     doc.text(`${pesoNeto}`, 5, 207);
-    doc.text(`${piezas} ${claveUnidad}`, 122, 207);
+    doc.text(`${piezasParaPDF} ${claveUnidad}`, 122, 207);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.5);
