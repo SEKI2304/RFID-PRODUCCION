@@ -7,6 +7,8 @@ import { DataGrid, GridToolbar, GridRowsProp, GridColDef } from '@mui/x-data-gri
 import './consultavaso.scss';
 import Swal from 'sweetalert2';
 import PrintIcon from '@mui/icons-material/Print';
+import jsPDF from 'jspdf';
+import ArticleIcon from '@mui/icons-material/Article';
 
 interface RowData {
   id: number;
@@ -45,6 +47,7 @@ const printers: Printer[] = [
 
 const ConsultaVaso: React.FC = () => {
   const navigate = useNavigate();
+  const [claveUnidad, setClaveUnidad] = useState('');
   const [rows, setRows] = useState<GridRowsProp>([]);
 
   const showPrinterSelection = (row: RowData) => {
@@ -110,6 +113,62 @@ const ConsultaVaso: React.FC = () => {
     showPrinterSelection(row);
   };
 
+  const formatDate = (dateTime: string): string => {
+    const date = new Date(dateTime);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Meses comienzan en 0
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const generatePDF = (data: RowData) => { //MODIFICAR ROTULO
+    const { claveProducto, nombreProducto, boxes, orden, fecha } = data;
+    const formattedDate = formatDate(fecha);
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'letter'  // Puedes ajustar el tamaño de página según necesites
+    });
+  
+    // Función para dividir y ajustar texto largo en varias líneas
+    const splitText = (text: string, x: number, y: number, fontSize: number, maxWidth: number): number => {
+      doc.setFontSize(fontSize);
+      const lines: string[] = doc.splitTextToSize(text, maxWidth); // Divide el texto para que se ajuste al ancho máximo
+      lines.forEach((line: string) => {  // Aquí se especifica el tipo de 'line' como 'string'
+        doc.text(line, x, y);
+        y += fontSize * 0.4; // Aumentar 'y' para la siguiente línea basada en el tamaño de la fuente
+      });
+      return y; // Retorna la nueva posición 'y' después de las líneas
+    };
+  
+    doc.setFontSize(150);
+    doc.text(`${claveProducto}`, 25, 45);
+
+    let currentY = 80; // Inicio de la posición Y para 'Nombre del Producto'
+    currentY = splitText(nombreProducto, 10, currentY, 45, 260); // Tamaño de fuente 60 y ancho máximo de 260mm
+
+    doc.setFontSize(40);
+    doc.text(`LOTE:${orden}`, 20, 161);
+    doc.text(`${formattedDate} `, 155, 161);
+
+    const unidad = claveUnidad || 'XBX';
+
+    doc.setFontSize(110);
+    doc.text(`${boxes} ${unidad}`, 70, 207);
+
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(5, 55, 275, 55);
+    doc.line(5, 145, 275, 145);
+    doc.line(5, 167, 275, 167);
+    window.open(doc.output('bloburl'), '_blank');
+  };
+
+  const handleGeneratePDFClick = (row: RowData) => {
+    generatePDF(row);
+  };
+
   useEffect(() => {
     axios.get('http://172.16.10.31/api/Vaso')
       .then(response => {
@@ -168,6 +227,9 @@ const ConsultaVaso: React.FC = () => {
         <>
           <IconButton onClick={() => handlePrintClick(params.row)}>
             <PrintIcon />
+          </IconButton>
+          <IconButton onClick={() => handleGeneratePDFClick(params.row)}>
+            <ArticleIcon />
           </IconButton>
         </>
       ),

@@ -123,6 +123,15 @@ const EtiquetadoVaso_produccion: React.FC = () => {
   };
 
   useEffect(() => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Actualización',
+      text: 'A partir de ahora, si requieren imprimir el rotulo de PT ya lo pueden realizar desde la vista de consultas, es en la misma vista donde realizan la reimpresion de etiqutas.',
+      confirmButtonText: 'Entendido'
+    });
+  }, []); 
+
+  useEffect(() => {
     axios.get<Area[]>('http://172.16.10.31/api/Area').then(response => {
       setAreas(response.data);
     });

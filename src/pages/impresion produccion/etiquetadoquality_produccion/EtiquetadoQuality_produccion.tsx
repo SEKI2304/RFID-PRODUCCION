@@ -10,6 +10,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import './etiquetadoquality_produccion.scss';
 import Swal from 'sweetalert2';
 import { styled } from '@mui/material/styles';
+import QRCode from "qrcode";
+import qualityImage from "../../../assets/quality.png";
+
 interface Area {
   id: number;
   area: string;
@@ -198,7 +201,14 @@ const EtiquetadoQuality_produccion: React.FC = () => {
     }
   }, [selectedArea, selectedOrden]);
   
-
+  useEffect(() => {
+    Swal.fire({
+      icon: 'info',
+      title: 'Actualización',
+      text: 'A partir de ahora, ya se genera automáticamente el rótulo que se utiliza en PT y también las 4 hojas que pide el cliente que se coloquen en la tarima.',
+      confirmButtonText: 'Entendido'
+    });
+  }, []);
 
   useEffect(() => {
     const generateTraceabilityCode = () => {
@@ -422,7 +432,80 @@ const resetValores = () => {
     doc.line(117, 167, 117, 210);
     window.open(doc.output('bloburl'), '_blank');
   };
+
   
+  const generatePDFWithQr = async (data: EtiquetaData) => {
+
+    const doc = new jsPDF({
+      orientation: "landscape", // Ajustado para mejor ajuste del contenido
+      unit: "mm",
+      format: "A4", // Formato más estándar para documentos
+    });
+
+    doc.setFontSize(12);
+    doc.text(`Customer:`, 7, 40);
+    doc.text(`Item:`, 7, 54);
+    doc.text(`QPS ITEM #: `, 7, 67);
+    doc.text(`Lot:`, 182, 67);
+    doc.text(`Total QTY/Pallet(Eaches)`, 182, 118);
+    doc.text(`Traceability:`, 7, 174);
+    doc.text(`GROSS WEIGHT:`, 7, 186);
+    doc.text(`NET WEIGHT:`, 152, 186);
+
+    doc.setFontSize(24);
+    doc.text(`${customer}`, 30, 43);
+    doc.setFontSize(28);
+    doc.text(`${item}`, 20, 58);
+
+    doc.setFontSize(22);
+    doc.text(`${lot}`, 220, 110);
+    doc.text(`${totalQtyPallet}`, 223, 163);
+    doc.text(`${qpsItemNumber}`, 65, 163);
+    doc.setFontSize(40);
+    doc.text(`${traceabilityCode}`, 35, 178);
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+    //lineas del contorno
+
+    doc.setFontSize(90);
+    doc.text(`${pesoBruto}`, 50, 204);
+    doc.text(`${pesoNeto}`, 190, 204);
+
+    doc.line(5, 5, 290, 5);
+    doc.line(290, 5, 290, 205);
+    doc.line(5, 205, 290, 205);
+    doc.line(5, 5, 5, 205);
+    //lineas interiores
+    doc.line(5, 30, 290, 30);
+    doc.line(5, 45, 290, 45);
+    doc.line(5, 60, 290, 60);
+    doc.line(5, 165, 290, 165);
+    doc.line(5, 180, 290, 180);
+    doc.line(180, 112.5, 290, 112.5);
+    //Lineas De enmedio
+    doc.line(180, 60, 180, 165);
+    doc.line(150, 180, 150, 205);
+
+    // Carga y añade la imagen al PDF
+    doc.addImage(qualityImage, "PNG", 50, 5, 200, 27);
+
+    // Función para agregar un QR
+    const addQRToPDF = async (text: string, x: number, y: number, size: number = 20) => {
+      try {
+        const url = await QRCode.toDataURL(text, { scale: 4 }); // Ajusta la escala según necesidades
+        doc.addImage(url, "JPEG", x, y, size, size);
+      } catch (error) {
+        console.error("Error generating QR code:", error);
+      }
+    };
+
+    // Generar QR Codes
+    await addQRToPDF(lot.toString(), 214, 64, 38);
+    await addQRToPDF(`${totalQtyPallet}`, 214, 119, 38);
+    await addQRToPDF(qpsItemNumber, 38, 61, 96);
+
+    doc.save("etiqueta.pdf");
+  };
 
   const handleConfirmEtiqueta = () => {
     if (!selectedPrinter) {
@@ -528,6 +611,7 @@ const resetValores = () => {
             resetForm();
             handleCloseModal();
             generatePDF(data);
+            generatePDFWithQr(data);
         })
         .catch(error => {
             Swal.fire({
