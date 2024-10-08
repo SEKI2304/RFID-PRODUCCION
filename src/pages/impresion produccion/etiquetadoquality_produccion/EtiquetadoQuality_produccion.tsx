@@ -175,27 +175,28 @@ const EtiquetadoQuality_produccion: React.FC = () => {
         const orden = response.data.find(orden => orden.id === selectedOrden);
         if (orden) {
           const productoConcatenado = `${orden.claveProducto} ${orden.producto}`;
-          setFilteredProductos(productoConcatenado); // Establece el producto concatenado
-          setUnidad(orden.unidad || "default_unit"); // Establece la unidad o una por defecto si no existe
+          setFilteredProductos(productoConcatenado); 
+          setUnidad(orden.unidad || "default_unit"); 
   
-          // Aplica la lógica para claveUnidad
           const validKeys = ["MIL", "XBX", "H87"];
           const nuevaClaveUnidadLocal = validKeys.includes(orden.claveUnidad) ? orden.claveUnidad : "Pzas";
           setClaveUnidad(nuevaClaveUnidadLocal);
   
-          // Filtra el texto para eliminar el código al inicio y "(QUALITY)" solo si están presentes
           let filteredItem = orden.producto;
-
-        // Elimina el código al inicio si comienza con "P" seguido de números
-        filteredItem = filteredItem.replace(/^P\d+\s*/, '');
-
-        // Elimina "(QUALITY)" si está presente
-        filteredItem = filteredItem.replace(/\(QUALITY\)/g, '');
-
-        // Elimina espacios en blanco al principio y al final
-        filteredItem = filteredItem.trim();
-
-        setItem(filteredItem);
+  
+          // Extract the QPS Item Number by matching "P" followed by numbers and/or letters
+          const extractedQPSItemNumber = filteredItem.match(/P\d+[A-Z]*\d*/)?.[0] || '';
+  
+          // Set the QPS Item Number
+          setQpsItemNumber(extractedQPSItemNumber);
+  
+          // Remove the QPS Item Number from the product string
+          filteredItem = filteredItem.replace(extractedQPSItemNumber, '').trim();
+  
+          // Remove "(QUALITY)" if present
+          filteredItem = filteredItem.replace(/\(QUALITY\)/g, '');
+  
+          setItem(filteredItem); // Set the cleaned product name
         }
       });
     }
@@ -628,7 +629,7 @@ const resetValores = () => {
   return (
     <div className='impresion-container-quality'>
       <Box className='top-container-bfx'>
-        <IconButton onClick={() => navigate('/ModulosTarima')} className='button-back'>
+        <IconButton onClick={() => navigate('/ModulosImpresionQuality')} className='button-back'>
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
