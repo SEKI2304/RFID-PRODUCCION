@@ -1,0 +1,75 @@
+.modulos-impresion {
+  display: flex;
+  flex-direction: column;
+  align-items: center; // Centra los elementos horizontalmente
+  justify-content: center; // Centra los elementos verticalmente
+  min-height: 100vh; // Utiliza el 100% de la altura de la pantalla visible
+  padding: 16px;
+  position: relative;
+  width: 100%; // Asegura que el contenedor use todo el ancho disponible
+  box-sizing: border-box; // Incluye padding en el cálculo del ancho y la altura
+}
+
+.modulos-impresion .back-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+}
+
+.modulos-impresion .title {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.modulos-impresion .grid-container {
+  width: 100%; // Asegura que el contenedor tome el ancho completo
+  padding: 16px;
+}
+
+.modulos-impresion .grid-item {
+  display: flex;
+  justify-content: center;
+  padding: 8px; // Reduce el margen para dispositivos más pequeños
+}
+
+.modulos-impresion .card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px; // Altura mínima para mejor aspecto
+  width: 100%; // Uso del 100% del espacio disponible en la grilla
+  max-width: 250px; // Máximo ancho para mantener la proporción
+  background-color: #46707e;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+  transition: background-color 0.3s;
+  padding: 20px; // Ajuste del padding para asegurar espacio interno suficiente
+}
+
+.modulos-impresion .card:hover {
+  background-color: #3b5c6b;
+}
+
+.modulos-impresion img {
+  max-width: 80%; // Aumenta el tamaño de la imagen
+  height: auto;
+}
+
+.modulos-impresion .card-title {
+  margin-top: 10px; // Ajuste del margen superior
+}
+
+@media (max-width: 600px) {
+  .modulos-impresion {
+    padding: 8px;
+  }
+  .modulos-impresion .card {
+    max-width: 100%; // Permite que las tarjetas tomen todo el ancho disponible
+  }
+}
+div.MuiBox-root.css-v20fs0 {
+  padding-bottom: 60px;
+}

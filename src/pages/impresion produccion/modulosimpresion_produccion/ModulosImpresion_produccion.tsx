@@ -11,7 +11,7 @@ import './modulosimpresion_produccion.scss';
 const modules = [
   { image: BioflexImage, label: 'BIOFLEX', path: '/ImpresionTarimaBFX' },
   { image: DestinyImage, label: 'DESTINY', path: '/ImpresionTarimaDestiny' },
-  { image: QualityImage, label: 'QUALITY', path: '/ImpresionTarimaQuality' },
+  { image: QualityImage, label: 'QUALITY', path: '/ModulosImpresionQuality' },
   { image: ReymaImage, label: 'VASO', path: '/ImpresionTarimaVaso' },
 ];
 
