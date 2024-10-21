@@ -104,7 +104,7 @@ const EtiquetadoQuality_produccion: React.FC = () => {
   const [lot, setLot] = useState<number | ''>('');
   const [numeroTarimaGenerado, setNumeroTarimaGenerado] = useState('');
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
@@ -508,7 +508,14 @@ const resetValores = () => {
     doc.save("etiqueta.pdf");
   };
 
+ 
+
+
   const handleConfirmEtiqueta = () => {
+    // Si ya se está enviando, no hacemos nada.
+    if (isSubmitting) return;
+
+    // Verificar si la impresora está seleccionada
     if (!selectedPrinter) {
         Swal.fire({
             icon: 'warning',
@@ -517,6 +524,9 @@ const resetValores = () => {
         });
         return;
     }
+
+    // Establecer el estado de envío para evitar clics múltiples
+    setIsSubmitting(true);
 
     const url = `http://172.16.10.31/Printer/QualityPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area;
@@ -562,6 +572,7 @@ const resetValores = () => {
             title: 'Pesos inválidos',
             text: 'El peso bruto y el peso neto no pueden ser 0.',
         });
+        setIsSubmitting(false); // Rehabilitar el botón
         return;
     }
 
@@ -599,6 +610,7 @@ const resetValores = () => {
             title: 'Campos incompletos',
             text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
         });
+        setIsSubmitting(false); // Rehabilitar el botón
         return;
     }
 
@@ -621,11 +633,11 @@ const resetValores = () => {
                 text: 'Hubo un error al generar la etiqueta.',
             });
             console.error('Error al generar la etiqueta:', error);
+        })
+        .finally(() => {
+            setIsSubmitting(false); // Rehabilitar el botón cuando termine el proceso
         });
 };
-
-
-
   return (
     <div className='impresion-container-quality'>
       <Box className='top-container-bfx'>

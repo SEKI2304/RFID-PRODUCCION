@@ -98,7 +98,7 @@ const EtiquetadoVaso_produccion: React.FC = () => {
   const [resetKey, setResetKey] = useState(0);
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" },
@@ -341,97 +341,107 @@ useEffect(() => {
     }
 };
 
-  const handleConfirmEtiqueta = () => {
-    if (!selectedPrinter) {
-      Swal.fire({
-          icon: 'warning',
-          title: 'Impresora no seleccionada',
-          text: 'Por favor, seleccione una impresora.',
-      });
-      return;
+const handleConfirmEtiqueta = () => {
+  // Si ya se está procesando una solicitud, no hacemos nada.
+  if (isSubmitting) return;
+
+  if (!selectedPrinter) {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Impresora no seleccionada',
+        text: 'Por favor, seleccione una impresora.',
+    });
+    return;
   }
-    const url = `http://172.16.10.31/api/Vaso/PostPrintVaso?ip=${selectedPrinter.ip}`;
 
-    const area = areas.find(a => a.id === selectedArea)?.area;
-    const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
-    const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
-    const producto = filteredProductos; // Directamente asigna el valor sin usar .join()
-    const turno = turnos.find(t => t.id === selectedTurno)?.turno;
-    const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
+  // Establecer el estado de envío para evitar clics múltiples
+  setIsSubmitting(true);
 
-    const data = {
-      area: area || '',
-      claveProducto: producto.split(' ')[0],
-      nombreProducto: producto.split(' ').slice(1).join(' '),
-      claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
-      operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
-      turno: turno || '',
-      pesoTarima:0,
-      pesoBruto:0,
-      pesoNeto:0,
-      piezas: 0,
-      trazabilidad: trazabilidad,
-      orden: orden || "",
-      rfid: rfid,
-      status: 1,
-      uom: unidad,
-      fecha: date,
-      postExtraVasoDto: {
-        amountPerBox: cantidadVasoPorCaja,
-        boxes: cantidadCajas,
-        totalAmount:totalPiezas, 
-      }
-    };
+  const url = `http://172.16.10.31/api/Vaso/PostPrintVaso?ip=${selectedPrinter.ip}`;
 
-    const requiredFields = [
-      { name: 'Área', value: data.area },
-      { name: 'Clave de Producto', value: data.claveProducto },
-      { name: 'Nombre de Producto', value: data.nombreProducto },
-      { name: 'Clave de Operador', value: data.claveOperador },
-      { name: 'Operador', value: data.operador },
-      { name: 'Turno', value: data.turno },
-      { name: 'Trazabilidad', value: data.trazabilidad },
-      { name: 'Orden', value: data.orden },
-      { name: 'RFID', value: data.rfid },
-      { name: 'UOM', value: data.uom },
-      { name: 'Fecha', value: data.fecha },
-      { name: 'Cantidad por Caja', value: data.postExtraVasoDto.amountPerBox },
-      { name: 'Cajas', value: data.postExtraVasoDto.boxes },
-      { name: 'Cantidad Total', value: data.postExtraVasoDto.totalAmount }
+  const area = areas.find(a => a.id === selectedArea)?.area;
+  const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
+  const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
+  const producto = filteredProductos;
+  const turno = turnos.find(t => t.id === selectedTurno)?.turno;
+  const operadorSeleccionado = operadores.find(o => o.id === selectedOperador);
+
+  const data = {
+    area: area || '',
+    claveProducto: producto.split(' ')[0],
+    nombreProducto: producto.split(' ').slice(1).join(' '),
+    claveOperador: operadorSeleccionado ? operadorSeleccionado.numNomina : '',
+    operador: operadorSeleccionado ? `${operadorSeleccionado.numNomina} - ${operadorSeleccionado.nombreCompleto}` : '',
+    turno: turno || '',
+    pesoTarima: 0,
+    pesoBruto: 0,
+    pesoNeto: 0,
+    piezas: 0,
+    trazabilidad: trazabilidad,
+    orden: orden || "",
+    rfid: rfid,
+    status: 1,
+    uom: unidad,
+    fecha: date,
+    postExtraVasoDto: {
+      amountPerBox: cantidadVasoPorCaja,
+      boxes: cantidadCajas,
+      totalAmount: totalPiezas,
+    }
+  };
+
+  const requiredFields = [
+    { name: 'Área', value: data.area },
+    { name: 'Clave de Producto', value: data.claveProducto },
+    { name: 'Nombre de Producto', value: data.nombreProducto },
+    { name: 'Clave de Operador', value: data.claveOperador },
+    { name: 'Operador', value: data.operador },
+    { name: 'Turno', value: data.turno },
+    { name: 'Trazabilidad', value: data.trazabilidad },
+    { name: 'Orden', value: data.orden },
+    { name: 'RFID', value: data.rfid },
+    { name: 'UOM', value: data.uom },
+    { name: 'Fecha', value: data.fecha },
+    { name: 'Cantidad por Caja', value: data.postExtraVasoDto.amountPerBox },
+    { name: 'Cajas', value: data.postExtraVasoDto.boxes },
+    { name: 'Cantidad Total', value: data.postExtraVasoDto.totalAmount }
   ];
 
   const emptyFields = requiredFields.filter(field => field.value === null || field.value === undefined || field.value === '');
 
-    if (emptyFields.length > 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Campos incompletos',
-            text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
-        });
-        return;
-    }
-  
-      axios.post(url, data)
-          .then(response => {
-              Swal.fire({
-                  icon: 'success',
-                  title: 'Etiqueta generada',
-                  text: 'La etiqueta se ha generado correctamente.',
-              });
-              resetForm();
-              handleCloseModal();
-              generatePDF(data);
-          })
-          .catch(error => {
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Error',
-                  text: 'Hubo un error al generar la etiqueta.',
-              });
-              console.error('Error al generar la etiqueta:', error);
-          });
-};
+  if (emptyFields.length > 0) {
+      Swal.fire({
+          icon: 'warning',
+          title: 'Campos incompletos',
+          text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
+      });
+      setIsSubmitting(false); // Rehabilitar el botón
+      return;
+  }
 
+  axios.post(url, data)
+      .then(response => {
+          Swal.fire({
+              icon: 'success',
+              title: 'Etiqueta generada',
+              text: 'La etiqueta se ha generado correctamente.',
+          });
+          resetForm();
+          handleCloseModal();
+          generatePDF(data);
+      })
+      .catch(error => {
+          Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Hubo un error al generar la etiqueta.',
+          });
+          console.error('Error al generar la etiqueta:', error);
+      })
+      .finally(() => {
+          setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
+      });
+};
 
   return (
     <div className='impresion-container-vaso'>

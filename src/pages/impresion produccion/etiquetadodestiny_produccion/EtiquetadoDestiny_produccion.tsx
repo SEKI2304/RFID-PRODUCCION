@@ -133,7 +133,8 @@ const [resetKey, setResetKey] = useState(0);
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [unidad, setUnidad] = useState('Piezas');
   const [piezasFormatted, setPiezasFormatted] = useState(''); 
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     Swal.fire({
       icon: 'info',
@@ -527,6 +528,9 @@ const resetValores = () => {
   
 
   const handleConfirmEtiqueta = async () => {
+    // Si ya se está procesando una solicitud, no hacemos nada.
+    if (isSubmitting) return;
+
     if (!selectedPrinter) {
         Swal.fire({
             icon: 'warning',
@@ -535,6 +539,9 @@ const resetValores = () => {
         });
         return;
     }
+
+    // Establecer el estado de envío para evitar clics múltiples
+    setIsSubmitting(true);
 
     const url = `http://172.16.10.31/Printer/DestinyPrinterIP?ip=${selectedPrinter.ip}`;
     const area = areas.find(a => a.id === selectedArea)?.area || '';
@@ -581,6 +588,7 @@ const resetValores = () => {
             title: 'Pesos inválidos',
             text: 'El peso bruto y el peso neto no pueden ser 0.',
         });
+        setIsSubmitting(false); // Rehabilitar el botón
         return;
     }
 
@@ -619,29 +627,31 @@ const resetValores = () => {
             title: 'Campos incompletos',
             text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
         });
+        setIsSubmitting(false); // Rehabilitar el botón
         return;
     }
 
-    axios.post(url, data)
-        .then(response => {
-            Swal.fire({
-                icon: 'success',
-                title: 'Etiqueta generada',
-                text: 'La etiqueta se ha generado correctamente.',
-            });
-            resetForm();
-            handleCloseModal();
-            generatePDF(data);
-            generatePDF2(data);
-        })
-        .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Hubo un error al generar la etiqueta.',
-            });
-            console.error('Error al generar la etiqueta:', error);
+    try {
+        const response = await axios.post(url, data);
+        Swal.fire({
+            icon: 'success',
+            title: 'Etiqueta generada',
+            text: 'La etiqueta se ha generado correctamente.',
         });
+        resetForm();
+        handleCloseModal();
+        generatePDF(data);
+        generatePDF2(data);
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Hubo un error al generar la etiqueta.',
+        });
+        console.error('Error al generar la etiqueta:', error);
+    } finally {
+        setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
+    }
 };
 
 

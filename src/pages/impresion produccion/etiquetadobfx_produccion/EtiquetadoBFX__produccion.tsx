@@ -92,6 +92,7 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   const [date, setDate] = useState('');
   const [resetKey, setResetKey] = useState(0);
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
@@ -348,6 +349,9 @@ const generatePDF = (data: EtiquetaData) => { //MODIFICAR ROTULO
 
 
 const handleConfirmEtiqueta = () => {
+  // Si ya se está procesando una solicitud, no hacemos nada.
+  if (isSubmitting) return;
+
   if (!selectedPrinter) {
       Swal.fire({
           icon: 'warning',
@@ -356,6 +360,9 @@ const handleConfirmEtiqueta = () => {
       });
       return;
   }
+
+  // Establecer el estado de envío para evitar clics múltiples
+  setIsSubmitting(true);
 
   const area = areas.find(a => a.id === selectedArea)?.area;
   const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
@@ -390,6 +397,7 @@ const handleConfirmEtiqueta = () => {
           title: 'Pesos inválidos',
           text: 'El peso bruto y el peso neto no pueden ser 0.',
       });
+      setIsSubmitting(false); // Rehabilitar el botón
       return;
   }
 
@@ -419,6 +427,7 @@ const handleConfirmEtiqueta = () => {
           title: 'Campos incompletos',
           text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
       });
+      setIsSubmitting(false); // Rehabilitar el botón
       return;
   }
 
@@ -442,15 +451,11 @@ const handleConfirmEtiqueta = () => {
               text: 'Hubo un error al generar la etiqueta.',
           });
           console.error('Error al generar la etiqueta:', error);
+      })
+      .finally(() => {
+          setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
       });
 };
-
-
-
-  
-
-
-
 
   return (
     <div>

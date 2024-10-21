@@ -105,6 +105,7 @@ const Etiquetado_WandW: React.FC = () => {
   const [inventoryLot, setInventoryLot] = useState<number>(0);
   const [totalUnits, setTotalUnits] = useState<number>(0);
   const [traceabilityCode, setTraceabilityCode] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Aqui se asginan los nombres y las IP de las impresoras
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
@@ -504,7 +505,10 @@ doc.save('rotulow&w.pdf');
 };
 
  // Valida los campos requeridos antes de confirmar la etiqueta y realizar la impresión.
-const handleConfirmEtiqueta = () => {
+ const handleConfirmEtiqueta = () => {
+  // Si ya se está procesando una solicitud, no hacemos nada.
+  if (isSubmitting) return;
+
   if (!selectedPrinter) {
       Swal.fire({
           icon: 'warning',
@@ -514,7 +518,9 @@ const handleConfirmEtiqueta = () => {
       return;
   }
 
-  
+  // Establecer el estado de envío para evitar clics múltiples
+  setIsSubmitting(true);
+
   const area = areas.find(a => a.id === selectedArea)?.area;
   const orden = ordenes.find(o => o.id === selectedOrden)?.orden.toString() ?? "";
   const maquina = filteredMaquinas.find(m => m.id === selectedMaquina)?.maquina;
@@ -556,6 +562,7 @@ const handleConfirmEtiqueta = () => {
           title: 'Pesos inválidos',
           text: 'El peso bruto y el peso neto no pueden ser 0.',
       });
+      setIsSubmitting(false); // Rehabilitar el botón
       return;
   }
 
@@ -591,6 +598,7 @@ const handleConfirmEtiqueta = () => {
           title: 'Campos incompletos',
           text: `Por favor, complete los siguientes campos: ${emptyFields.map(field => field.name).join(', ')}.`,
       });
+      setIsSubmitting(false); // Rehabilitar el botón
       return;
   }
 
@@ -615,6 +623,9 @@ const handleConfirmEtiqueta = () => {
               text: 'Hubo un error al generar la etiqueta.',
           });
           console.error('Error al generar la etiqueta:', error);
+      })
+      .finally(() => {
+          setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
       });
 };
 
