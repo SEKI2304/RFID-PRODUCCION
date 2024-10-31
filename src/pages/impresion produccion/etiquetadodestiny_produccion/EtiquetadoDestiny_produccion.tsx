@@ -446,56 +446,68 @@ const resetValores = () => {
     const bwipjs = require('bwip-js');
 
     doc.setFontSize(40);
-    doc.text(`PALLET CARD`, 20, 20);
+    doc.text(`PALLET PLACARD`, 7, 20);
 
-    doc.setFontSize(10);
-    doc.text(`Inventory lot:`, 7, 29);
-    doc.text(`Pallet ID:`, 7, 49);
-    doc.text(`Customer PO:`, 7, 74);
-    doc.text(`ItemDescription:`, 7, 99);
-    doc.text(`Item#:`, 7, 124);
-    doc.text(`GROSS WEIGHT:`, 7, 175);
-    doc.text(`Shipping Units/Pallet:`, 140, 9);
+    doc.setFontSize(12);
+    doc.text(`Inventory lot:`, 7, 35);
+    doc.text(`Pallet ID:`, 7, 70);
+    doc.text(`Customer PO:`, 7, 90);
+    doc.text(`ItemDescription:`, 7, 115);
+    doc.text(`Item#:`, 7, 140);
+    doc.text(`Shipping Units/Pallet:`, 141, 9);
     doc.text(`UOM:`, 209, 9);
-    doc.text(`QTY/UOM(Eaches):`, 140, 29);
-    doc.text(`Total Qty/Pallet(Eaches):`, 140, 49);
-    doc.text(`NET WEIGHT:`, 140, 175);
+    doc.text(`QTY/UOM(Eaches):`, 141, 35);
+    doc.text(`Total Qty/Pallet(Eaches):`, 141, 57);
+    
+    doc.setFontSize(62);
+    doc.text(`${inventoryLot}`, 7, 63);
 
     doc.setFontSize(36);
-    doc.text(`${inventoryLot}`, 7, 44);
-    doc.text(`${traceabilityCode}`, 7, 69);
-    doc.text(`${customerPO}`, 7, 94);
-    doc.text(`${shippingUnits}`, 140, 24);
-    doc.text(`${uom}`, 209, 24);
-    doc.text(`${qtyUOM}`, 140, 44);
+    doc.text(`${shippingUnits}`, 142, 27);
+    doc.text(`${uom}`, 209, 27);
+    doc.text(`${qtyUOM}`, 190, 49);
+    
 
     doc.setFontSize(28);
-    doc.text(`${itemDescription}`, 7, 119);
-    
-    doc.setFontSize(14);
-    doc.text(`${itemNumber}`, 124, 167);
-    doc.text(`${piezas}`, 205, 92);
+    doc.text(`${itemDescription}`, 7, 132);
+    doc.text(`${traceabilityCode}`, 7, 82);
+    doc.text(`${customerPO}`, 7, 103);
+    doc.text(`${piezas}`, 187, 103);
+    doc.setFontSize(68);
+    doc.text(`${itemNumber}`, 65, 205);
 
-    doc.setFontSize(90);
-    doc.text(`${pesoBruto}`, 50, 209);
-    doc.text(`${pesoNeto}`, 190, 209);
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.8);
+    doc.line(5, 5, 135, 5);
+    doc.line(5, 25, 135, 25);
+    doc.line(5, 5, 5, 25);
+    doc.line(135, 5, 135, 25);
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.3);
-    doc.line(5, 5, 275, 5);
-    doc.line(138, 5, 138, 95);
-    doc.line(207, 5, 207, 25);
-    doc.line(5, 5, 5, 210);
-    doc.line(275, 5, 275, 210);
-    doc.line(5, 25, 275, 25);
-    doc.line(5, 45, 275, 45);
-    doc.line(5, 70, 138, 70);
-    doc.line(5, 95, 275, 95);
-    doc.line(138, 170, 138, 210);
-    doc.line(5, 120, 275, 120);
-    doc.line(5, 170, 275, 170);
-    doc.line(5, 210, 275, 210);
+    //Barras shipping, UOM, Total
+    doc.line(140, 5, 140, 105);
+    doc.line(207, 5, 207, 30);
+    doc.line(275, 5, 275, 105);
+    doc.line(140, 5, 275, 5);
+    doc.line(140, 30, 275, 30);
+    doc.line(140, 52, 275, 52);
+    doc.line(140, 105, 275, 105);
 
+    //Barras Invt, pallet, Customer
+    doc.line(5, 30, 135, 30);
+    doc.line(5, 65, 135, 65);
+    doc.line(5, 85, 135, 85);
+    doc.line(5, 105, 135, 105);
+    doc.line(5, 30, 5, 105);
+    doc.line(135, 30, 135, 105);
+    
+    //Barras item # y item desc
+    doc.line(5, 110, 5, 210);
+    doc.line(5, 110, 275, 110);
+    doc.line(5, 135, 275, 135);
+    doc.line(5, 210, 275, 210);
+    doc.line(275, 110, 275, 210);
     try {
       const bwipjs = require('bwip-js');
       const canvasItem = document.createElement("canvas");
@@ -506,7 +518,7 @@ const resetValores = () => {
           height: 10,            // Bar height, in millimeters
       });
       const itemNumberUrl = canvasItem.toDataURL("image/png");
-      doc.addImage(itemNumberUrl, "PNG", 55, 130, 160, 30);
+      doc.addImage(itemNumberUrl, "PNG", 55, 145, 150, 35);
   
       const canvasTotal = document.createElement("canvas");
       await bwipjs.toCanvas(canvasTotal, {
@@ -516,7 +528,7 @@ const resetValores = () => {
           height: 10,                    // Bar height, in millimeters
       });
       const totalQtyPalletUrl = canvasTotal.toDataURL("image/png");
-      doc.addImage(totalQtyPalletUrl, "PNG", 170, 55, 70, 30);
+      doc.addImage(totalQtyPalletUrl, "PNG", 170, 62, 70, 30);
     } catch (error) {
         console.error("Error generating barcode:", error);
     }
@@ -901,7 +913,7 @@ const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) =
           <TextField
             key={`QTY/UOM(Eaches)-${resetKey}`}
             fullWidth
-            label="CANTIDAD POR CAJAS/ROLLOS"
+            label="CANTIDAD DE PIEZAS POR CAJAS/ROLLOS"
             variant="outlined"
             type="number"
             value={qtyUOM}
