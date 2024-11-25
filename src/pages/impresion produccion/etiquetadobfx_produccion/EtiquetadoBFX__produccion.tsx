@@ -434,27 +434,42 @@ const handleConfirmEtiqueta = () => {
   const url = `http://172.16.10.31/Printer/BfxPrinterIP?ip=${selectedPrinter.ip}`;
 
   axios.post(url, data)
-      .then(response => {
+  .then(response => {
+      Swal.fire({
+          icon: 'success',
+          title: 'Etiqueta generada',
+          text: 'La etiqueta se ha generado correctamente.',
+      });
+      resetForm();
+      handleCloseModal();
+      generatePDF(data);
+  })
+  .catch(error => {
+      // Obtener el mensaje de error específico del backend
+      const errorMessage = error.response && error.response.data
+          ? error.response.data
+          : 'Hubo un error al generar la etiqueta.';
+
+      // Verificar si el mensaje contiene el texto específico de "no está validada"
+      if (errorMessage.includes("no está validada")) {
           Swal.fire({
-              icon: 'success',
-              title: 'Etiqueta generada',
-              text: 'La etiqueta se ha generado correctamente.',
+              icon: 'error',
+              title: 'Esta orden no esta validada',
+              text: 'Para validar esta orden es necesario que acudas a programación.',
           });
-          resetForm();
-          handleCloseModal();
-          generatePDF(data);
-      })
-      .catch(error => {
+      } else {
           Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: 'Hubo un error al generar la etiqueta.',
+              text: errorMessage,
           });
-          console.error('Error al generar la etiqueta:', error);
-      })
-      .finally(() => {
-          setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
-      });
+      }
+
+      console.error('Error al generar la etiqueta:', error);
+  })
+  .finally(() => {
+      setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
+  });
 };
 
   return (
@@ -465,7 +480,11 @@ const handleConfirmEtiqueta = () => {
         </IconButton>
       </Box>
       <div className='impresion-container-bfx'>
-      
+        <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+        <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
+          Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
+        </Typography>
+      </Box>
       <Box className='impresion-card-bfx' sx={{ pt: 8 }}>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO BFX

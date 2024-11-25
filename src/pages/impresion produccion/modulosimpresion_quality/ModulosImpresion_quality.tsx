@@ -18,7 +18,7 @@ const ModulosImpresion_Quality: React.FC = () => {
     <div className='modulos-impresion'>
       <Box sx={{ width: '100%', p: 1, position: 'relative' }}>
         <IconButton
-          onClick={() => navigate('/ImpresionPT')}
+          onClick={() => navigate('/ModulosTarima')}
           sx={{
             position: 'absolute',
             top: 8,

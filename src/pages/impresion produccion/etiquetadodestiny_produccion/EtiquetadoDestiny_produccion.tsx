@@ -644,26 +644,39 @@ const resetValores = () => {
     }
 
     try {
-        const response = await axios.post(url, data);
-        Swal.fire({
-            icon: 'success',
-            title: 'Etiqueta generada',
-            text: 'La etiqueta se ha generado correctamente.',
-        });
-        resetForm();
-        handleCloseModal();
-        generatePDF(data);
-        generatePDF2(data);
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Hubo un error al generar la etiqueta.',
-        });
-        console.error('Error al generar la etiqueta:', error);
-    } finally {
-        setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
-    }
+      const response = await axios.post(url, data);
+      Swal.fire({
+          icon: 'success',
+          title: 'Etiqueta generada',
+          text: 'La etiqueta se ha generado correctamente.',
+      });
+      resetForm();
+      handleCloseModal();
+      generatePDF(data);
+      generatePDF2(data);
+  } catch (error) {
+      let errorMessage = 'Hubo un error al generar la etiqueta.';
+
+      // Verificar si el error es una instancia de AxiosError y contiene un mensaje de respuesta
+      if (axios.isAxiosError(error) && error.response && typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+
+          // Mostrar un mensaje específico si el error contiene "no está validada"
+          if (errorMessage.includes("no está validada")) {
+              errorMessage = 'Para validar esta orden es necesario que acudas a programación.';
+          }
+      }
+
+      Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: errorMessage,
+      });
+
+      console.error('Error al generar la etiqueta:', error);
+  } finally {
+      setIsSubmitting(false);
+  }
 };
 
 
@@ -805,6 +818,11 @@ const handleShippingUnitsChange = (event: React.ChangeEvent<HTMLInputElement>) =
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
+      <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+      <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
+        Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
+      </Typography>
+    </Box>
       <Box className='impresion-card-destiny'>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO DESTINY

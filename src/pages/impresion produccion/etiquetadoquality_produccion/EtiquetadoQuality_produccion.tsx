@@ -627,16 +627,31 @@ const resetValores = () => {
             generatePDFWithQr(data);
         })
         .catch(error => {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Hubo un error al generar la etiqueta.',
-            });
-            console.error('Error al generar la etiqueta:', error);
-        })
-        .finally(() => {
-            setIsSubmitting(false); // Rehabilitar el botón cuando termine el proceso
-        });
+          // Obtener el mensaje de error específico del backend
+          const errorMessage = error.response && error.response.data
+              ? error.response.data
+              : 'Hubo un error al generar la etiqueta.';
+    
+          // Verificar si el mensaje contiene el texto específico de "no está validada"
+          if (errorMessage.includes("no está validada")) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Esta orden no esta validada',
+                  text: 'Para validar esta orden es necesario que acudas a programación.',
+              });
+          } else {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: errorMessage,
+              });
+          }
+    
+          console.error('Error al generar la etiqueta:', error);
+      })
+      .finally(() => {
+          setIsSubmitting(false); // Rehabilitar el botón al finalizar el proceso
+      });
 };
   return (
     <div className='impresion-container-quality'>
@@ -645,7 +660,13 @@ const resetValores = () => {
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
+      <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+      <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
+        Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
+      </Typography>
+    </Box>
       <Box className='impresion-card-destiny'>
+        
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO QUALITY
         </Typography>

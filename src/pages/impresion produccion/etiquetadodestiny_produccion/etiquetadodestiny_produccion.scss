@@ -17,7 +17,14 @@ html, body, #root {
     padding-bottom: 60px; /* Espacio adicional en la parte inferior para el footer */
     box-sizing: border-box;/* Espacio adicional en la parte inferior para el footer */
 }
-
+.alert-box {
+  background-color: #ffe6e6; /* Fondo rojo claro */
+  border: 2px solid #cc0000; /* Borde rojo oscuro */
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px; /* Espacio debajo del cuadro */
+  text-align: center; /* Centrar el texto */
+}
 .impresion-card-destiny {
   background-color: #d1e0e5;
   padding: 32px;

@@ -21,7 +21,14 @@ html, body, #root {
   color: white;
 }
 }
-
+.alert-box {
+  background-color: #ffe6e6; /* Fondo rojo claro */
+  border: 2px solid #cc0000; /* Borde rojo oscuro */
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px; /* Espacio debajo del cuadro */
+  text-align: center; /* Centrar el texto */
+}
 .impresion-card-bfx {
   background-color: #d1e0e5;
   padding: 32px;
