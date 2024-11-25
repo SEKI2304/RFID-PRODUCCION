@@ -106,11 +106,11 @@ const EtiquetadoQuality_produccion: React.FC = () => {
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+  const [inputValue, setInputValue] = useState<string>("");
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" },
-    { name: "Impresora 3", ip: "172.16.20.112" }
   ];
 
   const handlePesoTarimaChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -660,11 +660,6 @@ const resetValores = () => {
           <ArrowBackIcon sx={{ fontSize: 40, color: '#46707e' }} />
         </IconButton>
       </Box>
-      <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-      <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
-        Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
-      </Typography>
-    </Box>
       <Box className='impresion-card-destiny'>
         
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
@@ -686,11 +681,20 @@ const resetValores = () => {
               renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
           />
           <Autocomplete
-              value={ordenes.find(o => o.id === selectedOrden)}
-              onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-              options={ordenes}
-              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
-              renderInput={(params) => <TextField {...params} label="Orden" />}
+            value={ordenes.find(o => o.id === selectedOrden)}
+            onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+            options={ordenes}
+            getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
+            renderInput={(params) => <TextField {...params} label="Orden" />}
+            noOptionsText={
+              inputValue.length >= 5 ? (
+                <span style={{ color: "red", padding: "8px" }}>Orden sin ruta de proceso</span>
+              ) : (
+                "No hay opciones"
+              )
+            }
+            inputValue={inputValue}
+            onInputChange={(event, newValue) => setInputValue(newValue)}
           />
           <Autocomplete
               value={filteredMaquinas.find(m => m.id === selectedMaquina)}

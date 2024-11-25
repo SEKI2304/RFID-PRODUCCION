@@ -78,7 +78,7 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   const [selectedArea, setSelectedArea] = useState<number | undefined>();
   const [selectedTurno, setSelectedTurno] = useState<number | undefined>();
   const [selectedMaquina, setSelectedMaquina] = useState<number | undefined>();
-  const [selectedOrden, setSelectedOrden] = useState<number | undefined>();
+  const [selectedOrden, setSelectedOrden] = useState<number | null>(null);
   const [pesoBruto, setPesoBruto] = useState<number | undefined>();
   const [pesoNeto, setPesoNeto] = useState<number | undefined>();
   const [pesoTarima, setPesoTarima] = useState<number | undefined>();
@@ -93,13 +93,12 @@ const EtiquetadoBFX_produccion: React.FC = () => {
   const [resetKey, setResetKey] = useState(0);
   const [claveUnidad, setClaveUnidad] = useState('Unidad');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [inputValue, setInputValue] = useState<string>('');  // Estado para el valor del input
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
 
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
-    { name: "Impresora 2", ip: "172.16.20.57" },
-    { name: "Impresora 3", ip: "172.16.20.112" }
+    { name: "Impresora 2", ip: "172.16.20.57" }
   ];
   
 
@@ -288,7 +287,7 @@ const RedButton = styled(Button)({
     setUnidad('');
     setDate('');
     setSelectedArea(undefined);
-    setSelectedOrden(undefined);
+    setSelectedOrden(0);
     setSelectedMaquina(undefined);
     setSelectedTurno(undefined);
     setSelectedOperador(undefined);
@@ -480,11 +479,6 @@ const handleConfirmEtiqueta = () => {
         </IconButton>
       </Box>
       <div className='impresion-container-bfx'>
-        <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-        <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
-          Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
-        </Typography>
-      </Box>
       <Box className='impresion-card-bfx' sx={{ pt: 8 }}>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO BFX
@@ -505,17 +499,33 @@ const handleConfirmEtiqueta = () => {
                 getOptionLabel={(option) => option.area}
                 renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
             />
-            <Autocomplete
-                key={`orden-${resetKey}`}
-                value={ordenes.find(o => o.id === selectedOrden) || null}
-                onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-                options={ordenes}
-                getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
-                filterOptions={createFilterOptions({
-                    matchFrom: 'start',
-                    stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
-                })}
-                renderInput={(params) => <TextField {...params} label="Orden" />}
+           <Autocomplete
+              key={`orden-${resetKey}`}
+              value={ordenes.find((o) => o.id === selectedOrden) || null}
+              onChange={(event: React.SyntheticEvent, newValue: typeof ordenes[number] | null) => {
+                setSelectedOrden(newValue?.id || null);
+              }}
+              inputValue={inputValue}
+              onInputChange={(event: React.SyntheticEvent, newInputValue: string) => {
+                setInputValue(newInputValue);
+              }}
+              options={ordenes}
+              getOptionLabel={(option: typeof ordenes[number]) =>
+                `${option.orden} - ${option.claveProducto} ${option.producto}`
+              }
+              filterOptions={createFilterOptions({
+                matchFrom: "start",
+                stringify: (option: typeof ordenes[number]) =>
+                  `${option.orden} - ${option.claveProducto} ${option.producto}`,
+              })}
+              renderInput={(params) => <TextField {...params} label="Orden" />}
+              noOptionsText={
+                inputValue.length >= 5 ? (
+                  <span style={{ color: "red" }}>La orden no encuentra una ruta de proceso</span>
+                ) : (
+                  "No hay opciones"
+                )
+              }
             />
             <Autocomplete
                 key={`maquina-${resetKey}`}

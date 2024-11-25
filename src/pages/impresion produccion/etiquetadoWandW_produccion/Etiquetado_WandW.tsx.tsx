@@ -106,11 +106,11 @@ const Etiquetado_WandW: React.FC = () => {
   const [totalUnits, setTotalUnits] = useState<number>(0);
   const [traceabilityCode, setTraceabilityCode] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inputValue, setInputValue] = useState<string>("");
   // Aqui se asginan los nombres y las IP de las impresoras
   const printerOptions = [
     { name: "Impresora 1", ip: "172.16.20.56" },
     { name: "Impresora 2", ip: "172.16.20.57" },
-    { name: "Impresora 3", ip: "172.16.20.112" }
   ];
   
   // Se utiliza para cargar las areas y turnos en cuanto se inicializa el componente
@@ -652,12 +652,6 @@ doc.save('rotulow&w.pdf');
         </IconButton>
       </Box>
       <div className='impresion-container-wandw'>
-      <Box className="alert-box" sx={{ backgroundColor: '#ffe6e6', border: '2px solid #cc0000', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-      <Typography variant="body1" sx={{ color: '#cc0000', fontWeight: 'bold', textAlign: 'center' }}>
-        Ruta de proceso: Si no se encuentra una orden en el proceso seleccionado, solicita a ingeniería que revisen la ruta de procesos.
-      </Typography>
-    </Box>
-
       <Box className='impresion-card-wandw' sx={{ pt: 8 }}>
         <Typography variant="h5" sx={{ textAlign: 'center', mb: 2 }}>
           GENERACION ETIQUETA FORMATO WARNER AND WARNER
@@ -679,16 +673,25 @@ doc.save('rotulow&w.pdf');
                 renderInput={(params) => <TextField {...params} label="Área" fullWidth />}
             />
             <Autocomplete
-                key={`orden-${resetKey}`}
-                value={ordenes.find(o => o.id === selectedOrden) || null}
-                onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
-                options={ordenes}
-                getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
-                filterOptions={createFilterOptions({
-                    matchFrom: 'start',
-                    stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
-                })}
-                renderInput={(params) => <TextField {...params} label="Orden" />}
+              key={`orden-${resetKey}`}
+              value={ordenes.find(o => o.id === selectedOrden) || null}
+              onChange={(event, newValue) => setSelectedOrden(newValue?.id)}
+              options={ordenes}
+              getOptionLabel={(option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto}
+              filterOptions={createFilterOptions({
+                matchFrom: 'start',
+                stringify: (option) => option.orden.toString() + " - " + option.claveProducto + " " + option.producto
+              })}
+              renderInput={(params) => <TextField {...params} label="Orden" />}
+              noOptionsText={
+                inputValue.length >= 5 ? (
+                  <span style={{ color: "red", padding: "8px" }}>Orden sin ruta de proceso</span>
+                ) : (
+                  "No hay opciones"
+                )
+              }
+              inputValue={inputValue}
+              onInputChange={(event, newValue) => setInputValue(newValue)}
             />
             <Autocomplete
                 key={`maquina-${resetKey}`}
