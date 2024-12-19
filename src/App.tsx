@@ -15,6 +15,8 @@ import ConsultaQuality from './pages/consultas/consultasquality/ConsultaQuality'
 import ConsultaVaso from './pages/consultas/consultasvaso/ConsultaVaso';
 import Etiquetado_WandW from './pages/impresion produccion/etiquetadoWandW_produccion/Etiquetado_WandW.tsx';
 import ModulosImpresion_Quality from './pages/impresion produccion/modulosimpresion_quality/ModulosImpresion_quality';
+import ModulosRegistros from './pages/registros/modulosregistros/ModulosRegistros';
+import RegistroInsumos from './pages/registros/registroinsumos/RegistroInsumos';
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
             <Route path="/ImpresionTarimaVaso" element={<EtiquetadoVaso_produccion />} />
             <Route path="/ImpresionTarimaW&W" element={<Etiquetado_WandW />} />
             <Route path="/ModulosImpresionQuality" element={<ModulosImpresion_Quality />} />
+            <Route path="/ModulosRegistros" element={<ModulosRegistros />} />
+            <Route path="/Insumos" element={<RegistroInsumos/>} />
             <Route path="/Consultas" element={<MoudulosConsultas />} />
             <Route path="/ConsultaBFX" element={<ConsultaBFX />} />
             <Route path="/ConsultaDestiny" element={<ConsultaDestiny />} />

@@ -9,10 +9,12 @@ import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
 import SatelliteIcon from '@mui/icons-material/Satellite';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import PrintIcon from '@mui/icons-material/Print';
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 
 const icons = [
   { icon: PrintIcon, label: 'IMPRESION TARIMA PRODUCCION', path: '/ModulosTarima' },
   { icon: WebIcon, label: 'CONSULTAS', path: '/consultas' },
+  { icon: AppRegistrationIcon, label: 'REGISTROS', path: '/ModulosRegistros' },
 ];
 
 export const Dashboard: React.FC = () => {
