@@ -17,6 +17,7 @@ import Etiquetado_WandW from './pages/impresion produccion/etiquetadoWandW_produ
 import ModulosImpresion_Quality from './pages/impresion produccion/modulosimpresion_quality/ModulosImpresion_quality';
 import ModulosRegistros from './pages/registros/modulosregistros/ModulosRegistros';
 import RegistroInsumos from './pages/registros/registroinsumos/RegistroInsumos';
+import Etiquetado_HRSpinner from './pages/impresion produccion/etiquetadoHRSpinner_produccion/Etiquetado_HRSpinner';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
             <Route path="/ImpresionTarimaQuality" element={<EtiquetadoQuality_produccion />} />
             <Route path="/ImpresionTarimaVaso" element={<EtiquetadoVaso_produccion />} />
             <Route path="/ImpresionTarimaW&W" element={<Etiquetado_WandW />} />
+            <Route path="/ImpresionHRSpinner" element={<Etiquetado_HRSpinner />} />
             <Route path="/ModulosImpresionQuality" element={<ModulosImpresion_Quality />} />
             <Route path="/ModulosRegistros" element={<ModulosRegistros />} />
             <Route path="/Insumos" element={<RegistroInsumos/>} />

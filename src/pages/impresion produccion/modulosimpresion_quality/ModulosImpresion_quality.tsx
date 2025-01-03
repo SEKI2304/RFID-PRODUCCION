@@ -9,6 +9,7 @@ import './modulosimpresion_produccion.scss';
 const modules = [
   { image: QualityImage, label: 'QUALITY', path: '/ImpresionTarimaQuality' },
   { image: WandWImage, label: 'WARNER & WARNER', path: '/ImpresionTarimaW&W' },
+  { image: QualityImage, label: 'H.R. SPINNER', path: '/ImpresionHRSpinner' },
 ];
 
 const ModulosImpresion_Quality: React.FC = () => {
