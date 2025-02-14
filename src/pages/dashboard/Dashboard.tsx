@@ -1,18 +1,13 @@
 import * as React from 'react';
 import { Box, Grid, Typography, useTheme, useMediaQuery } from '@mui/material';
 import { Link } from 'react-router-dom';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WebIcon from '@mui/icons-material/Web';
-import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
-import SatelliteIcon from '@mui/icons-material/Satellite';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import PrintIcon from '@mui/icons-material/Print';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 
 const icons = [
-  { icon: PrintIcon, label: 'IMPRESION TARIMA PRODUCCION', path: '/ModulosTarima' },
+  { icon: PrintIcon, label: 'IMPRESION PRODUCTO TERMINADO', path: '/ModulosTarima' },
+  { icon: PrintIcon, label: 'IMPRESION MP', path: '/Generacion-bobina' },
   { icon: WebIcon, label: 'CONSULTAS', path: '/consultas' },
   { icon: AppRegistrationIcon, label: 'REGISTROS', path: '/ModulosRegistros' },
 ];

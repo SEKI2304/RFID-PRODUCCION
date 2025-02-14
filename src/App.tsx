@@ -18,6 +18,7 @@ import ModulosImpresion_Quality from './pages/impresion produccion/modulosimpres
 import ModulosRegistros from './pages/registros/modulosregistros/ModulosRegistros';
 import RegistroInsumos from './pages/registros/registroinsumos/RegistroInsumos';
 import Etiquetado_HRSpinner from './pages/impresion produccion/etiquetadoHRSpinner_produccion/Etiquetado_HRSpinner';
+import ReetiquetadoBobina from './pages/impresionmp/reentarimado-bobina/ReEntarimadoMP';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             <Route path="/ConsultaDestiny" element={<ConsultaDestiny />} />
             <Route path="/ConsultaQuality" element={<ConsultaQuality />} />
             <Route path="/ConsultaVaso" element={<ConsultaVaso />} />
+            <Route path="/Generacion-bobina" element={<ReetiquetadoBobina />} />
           </Routes>
         </div>
       </div>
